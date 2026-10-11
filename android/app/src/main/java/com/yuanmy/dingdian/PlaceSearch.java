@@ -31,7 +31,7 @@ final class PlaceSearch {
         URL url = new URL("https://photon.komoot.io/api/?limit=5&q=" + URLEncoder.encode(query, "UTF-8"));
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setConnectTimeout(10000); connection.setReadTimeout(10000);
-        connection.setRequestProperty("User-Agent", "DingDian-Android/0.2 (personal location testing)");
+        connection.setRequestProperty("User-Agent", "DingDian-Android/1.0.0 (personal location testing)");
         connection.setRequestProperty("Accept", "application/json");
         try {
             int code = connection.getResponseCode();

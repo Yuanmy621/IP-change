@@ -4,6 +4,8 @@
 
 **手机独立版：安装一次，之后通过链接打开。** 在 Android 手机上安装“定点”并将它选为模拟位置信息应用，之后可断开电脑，在手机中选点和恢复定位。原来的 Mac 版仍可使用，不需要在手机安装 App，但使用期间要保持电脑运行和 USB 连接。两种模式均无需 Root。仓库名称中的 `IP-change` 指这个项目，工具实际修改的是定位坐标，**不会改变网络出口 IP**。
 
+**下载 [v1.0.0 Release](https://github.com/Yuanmy621/IP-change/releases/tag/v1.0.0)**：Android 使用 `dingdian-1.0.0-android.apk`；Mac 使用 `dingdian-1.0.0-macos.zip`，包含两种芯片的程序、启动器和 ADB。文件摘要见 `SHA256SUMS.txt`，版本说明见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 手机独立版
 
 Android 9 及以上可安装；目前提供个人测试用 APK。网页地图、搜索与收藏界面打包在 App 内，由 Android 前台服务操作测试定位源，每 2 秒刷新一次。链接用于打开已安装的 App；普通浏览器本身无法修改系统定位。
@@ -11,12 +13,12 @@ Android 9 及以上可安装；目前提供个人测试用 APK。网页地图、
 首次使用：
 
 1. 若正在使用 Mac 版，先连接原手机，在 Mac 页面恢复定位并退出工具。
-2. 安装 `dist/定点-Android.apk`，打开“定点”，允许精确位置信息和通知，并开启手机位置信息。
+2. 从 Release 下载并安装 Android APK（自行构建的输出为 `dist/定点-Android.apk`），打开“定点”，允许精确位置信息和通知，并开启手机位置信息。
 3. 在手机开发者选项中，将“定点”选为“模拟位置信息应用”。页面提供进入开发者选项的按钮。
 4. 通过入口链接或桌面图标打开，选择目标点并点击“应用位置”。此后日常运行无需电脑或数据线。
 5. 结束时从页面或通知栏点击“恢复真实定位”。恢复会移除本工具创建的测试定位源，保留你的模拟位置应用选择。
 
-当前私人入口：[手机打开定点](https://dingdian-mobile-yuanmy.ymy17360692646.chatgpt.site)，需要登录入口所有者的 ChatGPT 账号，页面提供测试版 APK 下载。手机独立版使用 `dingdian://open` 启动链接；静态入口页源码在 `docs/`。点击链接不会自动应用坐标，仍需在 App 中确认。也可将入口页托管在自己的 HTTPS 网站；同时放置 `dingdian-android.apk`，即可下载和启动。内置浏览器可能限制唤起，请使用手机系统浏览器。
+当前私人入口：[手机打开定点](https://dingdian-mobile-yuanmy.ymy17360692646.chatgpt.site)，需要登录入口所有者的 ChatGPT 账号，该入口仍保留早期测试包，升级请使用上方 v1.0.0 Release。手机独立版使用 `dingdian://open` 启动链接；静态入口页源码在 `docs/`。点击链接不会自动应用坐标，仍需在 App 中确认。也可将 `docs/` 入口页托管在自己的 HTTPS 网站；页面已链接到 v1.0.0 Release 安装包，可直接下载和启动。内置浏览器可能限制唤起，请使用手机系统浏览器。
 
 定位服务运行时显示持续通知。HyperOS 后台限制可能停止服务，可在应用电量设置中允许持续运行。进程被终止或手机重启后不会自动续用旧坐标；重新打开 App 后先处理待恢复会话。存在恢复记录时不要清除应用数据或卸载。切换 Mac 版与手机独立版前，应先恢复并退出当前版本。
 
@@ -92,7 +94,9 @@ adb shell am instrument -w -e exerciseMock true \
 
 ## 安装与首次启动
 
-**Mac 版当前提供源码，尚未发布可直接下载的 Mac 程序。** GitHub 的 “Download ZIP” 和 `git clone` 均不包含两种 Mac 启动程序，也不包含 `platform-tools/`；需要完成以下准备后才能双击启动。手机测试版 APK 可从上方手机入口下载。
+**直接使用：从 Release 下载 Mac 压缩包，完整解压后双击 `启动定点.command`。** 包内已经包含程序和 ADB，无需安装 Go。Android APK 也可从 Release 下载。
+
+以下为从源码构建的方式。GitHub 的 “Download ZIP” 和 `git clone` 均不包含 Mac 程序或 `platform-tools/`；需要完成以下准备后才能双击启动。
 
 ### 1. 获取源码
 
