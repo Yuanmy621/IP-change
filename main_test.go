@@ -101,6 +101,63 @@ func coords(lat, lon float64) position {
 	return position{Serial: "K80", Latitude: &lat, Longitude: &lon}
 }
 
+func TestADBRunnerLocationHelpExitStatus(t *testing.T) {
+	help := "Location service commands:\n  help or -h\n    Print this help text.\n  add-test-provider remove-test-provider set-test-provider-location"
+	for _, test := range []struct {
+		name, output string
+		status       string
+		command      []string
+		wantError    bool
+	}{
+		{"help exit 255", help, "255", []string{"cmd", "location", "help"}, false},
+		{"help exit 1", help, "1", []string{"cmd", "location", "help"}, true},
+		{"help without output", "", "255", []string{"cmd", "location", "help"}, true},
+		{"unrecognized output", "unknown command", "255", []string{"cmd", "location", "help"}, true},
+		{"permission failure", help + "\nSecurityException: denied", "255", []string{"cmd", "location", "help"}, true},
+		{"location write failure", help, "255", []string{"cmd", "location", "providers", "add-test-provider", "gps"}, true},
+		{"another service help", help, "255", []string{"cmd", "package", "help"}, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "adb")
+			script := "#!/bin/sh\ncat <<'OUTPUT'\n" + test.output + "\nOUTPUT\nexit " + test.status + "\n"
+			if err := os.WriteFile(path, []byte(script), 0700); err != nil {
+				t.Fatal(err)
+			}
+			args := append([]string{"-s", "K80", "shell"}, test.command...)
+			output, err := adbRunner(path)(args...)
+			wantOutput := strings.TrimSpace(test.output)
+			if wantOutput == "" {
+				wantOutput = "exit status " + test.status
+			}
+			if (err != nil) != test.wantError || output != wantOutput {
+				t.Fatalf("output=%q, error=%v", output, err)
+			}
+		})
+	}
+}
+
+func TestProbeAcceptsLocationHelpExit255(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "adb")
+	script := `#!/bin/sh
+case "$*" in
+  'devices -l') printf 'List of devices attached\nK80 device model:Redmi_K80\n' ;;
+  '-s K80 shell cmd location help')
+    printf 'Location service commands:\n  help or -h\n    Print this help text.\n  add-test-provider remove-test-provider set-test-provider-location\n'
+    exit 255 ;;
+  '-s K80 shell getprop '*) printf '16\n' ;;
+  *) exit 1 ;;
+esac
+`
+	if err := os.WriteFile(path, []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	c := &controller{run: adbRunner(path)}
+	info, err := c.probe("K80")
+	if err != nil || info["android"] != "16" {
+		t.Fatalf("probe info=%v, error=%v", info, err)
+	}
+}
+
 func TestApplyUpdateAndRestoreOriginalPermission(t *testing.T) {
 	f := newPhone()
 	c := control(t, f)

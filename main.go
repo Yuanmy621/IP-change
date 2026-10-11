@@ -71,7 +71,7 @@ func adbRunner(path string) runner {
 		if ctx.Err() != nil {
 			return s, errors.New("手机响应超时，请检查 USB 连接和调试授权")
 		}
-		if err != nil || regexp.MustCompile(`(?im)SecurityException|IllegalArgumentException|^Error:|^Exception occurred`).MatchString(s) {
+		if (err != nil && !locationHelpSucceeded(args, s, err)) || regexp.MustCompile(`(?im)SecurityException|IllegalArgumentException|^Error:|^Exception occurred`).MatchString(s) {
 			if s == "" {
 				s = fmt.Sprint(err)
 			}
@@ -79,6 +79,16 @@ func adbRunner(path string) runner {
 		}
 		return s, nil
 	}
+}
+func locationHelpSucceeded(args []string, output string, err error) bool {
+	// Some Android builds print valid location help but return -1 (shell exit 255).
+	// Only tolerate that status for this read-only command with recognizable help.
+	var exitError *exec.ExitError
+	return errors.As(err, &exitError) && exitError.ExitCode() == 255 &&
+		len(args) == 6 && args[0] == "-s" && args[1] != "" &&
+		slices.Equal(args[2:], []string{"shell", "cmd", "location", "help"}) &&
+		strings.HasPrefix(output, "Location service commands:") &&
+		strings.Contains(output, "Print this help text.")
 }
 func (c *controller) shell(serial string, args ...string) (string, error) {
 	return c.run(append([]string{"-s", serial, "shell"}, args...)...)
