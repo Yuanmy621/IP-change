@@ -52,6 +52,7 @@ type session struct {
 	Longitude    float64  `json:"longitude"`
 }
 type controller struct {
+	searcher    *placeSearch
 	mu          sync.Mutex
 	run         runner
 	journal     string
@@ -438,6 +439,10 @@ func decode(w http.ResponseWriter, r *http.Request, v any) error {
 	return nil
 }
 func handler(c *controller, host, token string, stop func()) http.Handler {
+	searcher := c.searcher
+	if searcher == nil {
+		searcher = newPlaceSearch(defaultGeocoder)
+	}
 	static, _ := fs.Sub(assets, "web")
 	files := http.FileServer(http.FS(static))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -480,6 +485,14 @@ func handler(c *controller, host, token string, stop func()) http.Handler {
 		var err error
 		var result any = map[string]bool{"ok": true}
 		switch r.URL.Path {
+		case "/api/places/search":
+			var body struct {
+				Query string `json:"query"`
+			}
+			err = decode(w, r, &body)
+			if err == nil {
+				result, err = searcher.search(r.Context(), body.Query)
+			}
 		case "/api/probe":
 			var body struct {
 				Serial string `json:"serial"`
@@ -524,6 +537,7 @@ func main() {
 	port := flag.Int("port", 8765, "本机网页端口")
 	noOpen := flag.Bool("no-open", false, "不自动打开浏览器")
 	printURL := flag.Bool("print-url", false, "打印带凭证的本机 URL（仅供本地调试）")
+	geocoderURL := flag.String("geocoder-url", defaultGeocoder, "Photon 兼容的地名查询服务 URL")
 	state := flag.String("state", filepath.Join(root, ".runtime", "session.json"), "恢复记录路径")
 	flag.Parse()
 	if _, err = os.Stat(*adb); err != nil {
@@ -540,7 +554,7 @@ func main() {
 	if err = syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
 		log.Fatal("工具已经在运行，请回到原来的网页。")
 	}
-	c := &controller{run: adbRunner(*adb), journal: *state}
+	c := &controller{run: adbRunner(*adb), journal: *state, searcher: newPlaceSearch(*geocoderURL)}
 	if err = c.load(); err != nil {
 		log.Fatal(err)
 	}

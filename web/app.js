@@ -3,6 +3,8 @@ let token = location.hash.slice(1);
 if (token) { sessionStorage.setItem('locationToken', token); history.replaceState(null, '', '/'); }
 else token = sessionStorage.getItem('locationToken') || '';
 let busy = false, stopped = false, status = null, map = null, marker = null, previousError = '', lastDevice = '', initialized = false;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let cancelMapZoom = () => {}, searchBusy = false;
 function notify(text, error = false) { $('message').textContent = text; $('message').classList.toggle('error', error); $('message').hidden = false; }
 async function api(path, data) {
   const response = await fetch('/api/' + path, { method: data === undefined ? 'GET' : 'POST', headers: { 'X-Session-Token': token, 'Content-Type': 'application/json' }, body: data === undefined ? undefined : JSON.stringify(data) });
@@ -68,17 +70,44 @@ function syncMap(pan = false) {
     const point = [lat, lon];
     if (!marker) marker = L.marker(point, { icon: L.divIcon({ className: '', html: '<div class="map-pin"></div>', iconSize: [28, 28], iconAnchor: [14, 14] }) }).addTo(map);
     else marker.setLatLng(point);
-    if (pan) map.setView(point, Math.max(map.getZoom(), 12));
+    if (pan) { cancelMapZoom(); map.stop(); map.flyTo(point, Math.max(map.getZoom(), 12), { animate: !reducedMotion.matches, duration: 0.7 }); }
   }
   buttons();
 }
-function choose(lat, lon) { $('latitude').value = Number(lat).toFixed(6); $('longitude').value = Number(lon).toFixed(6); syncMap(true); }
+function choose(lat, lon, pan = true) { $('latitude').value = Number(lat).toFixed(6); $('longitude').value = Number(lon).toFixed(6); syncMap(pan); }
 if (window.L) {
-  map = L.map('map', { zoomControl: true }).setView([31.2304, 121.4737], 12);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>' }).addTo(map).on('tileerror', () => { $('mapHint').textContent = '地图加载受网络影响；可直接输入经纬度'; });
-  map.on('click', e => choose(e.latlng.lat, e.latlng.lng));
+  map = L.map('map', { zoomControl: true, scrollWheelZoom: false, zoomSnap: 0, zoomDelta: 0.5, minZoom: 2, maxZoom: 19, zoomAnimation: !reducedMotion.matches, fadeAnimation: !reducedMotion.matches }).setView([31.2304, 121.4737], 12);
+  cancelMapZoom = MapTools.smoothWheelZoom(map, reducedMotion);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, updateWhenZooming: false, keepBuffer: 2, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>' }).addTo(map).on('tileerror', () => { $('mapHint').textContent = '地图加载受网络影响；可直接输入经纬度'; });
+  map.on('click', e => choose(e.latlng.lat, e.latlng.wrap().lng, false));
+  if (window.ResizeObserver) new ResizeObserver(() => map.invalidateSize({ pan: false })).observe($('map'));
 } else $('mapHint').textContent = '地图组件未加载；请直接输入经纬度';
 syncMap();
+function searchStatus(text, error = false) { $('searchStatus').textContent = text; $('searchStatus').classList.toggle('error', error); }
+$('searchForm').addEventListener('submit', async event => {
+  event.preventDefault(); if (searchBusy) return;
+  const query = $('searchQuery').value.trim();
+  $('searchResults').hidden = true; $('searchResults').replaceChildren();
+  if (!query) { searchStatus('请输入地名、地址或「纬度, 经度」。', true); $('searchQuery').focus(); return; }
+  try {
+    const coordinate = MapTools.parseCoordinates(query);
+    if (coordinate) { choose(coordinate.latitude, coordinate.longitude); searchStatus('已选定该坐标。连接手机后点击「应用位置」即可使用。'); return; }
+    searchBusy = true; $('searchButton').disabled = true; $('searchButton').textContent = '搜索中…'; searchStatus('正在查找位置…');
+    const results = await api('places/search', { query });
+    if ($('searchQuery').value.trim() !== query) { searchStatus('内容已更新，请按回车重新搜索。'); return; }
+    if (!results.length) { searchStatus('没有找到该位置，可补充城市名称或直接输入经纬度。'); return; }
+    for (const place of results) {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'search-result';
+      const title = document.createElement('span'); title.textContent = place.name;
+      const coordinateText = document.createElement('small'); coordinateText.textContent = `${place.latitude.toFixed(6)}, ${place.longitude.toFixed(6)} · WGS84`;
+      button.append(title, coordinateText);
+      button.addEventListener('click', () => { choose(place.latitude, place.longitude); $('searchResults').hidden = true; searchStatus('已选定：' + place.name); $('searchQuery').value = place.name.slice(0, 200); });
+      $('searchResults').append(button);
+    }
+    $('searchResults').hidden = false; searchStatus(`找到 ${results.length} 个位置，点击结果选定坐标。`);
+  } catch (error) { searchStatus(error.message, true); }
+  finally { searchBusy = false; $('searchButton').disabled = false; $('searchButton').textContent = '搜索 ↗'; }
+});
 for (const id of ['latitude', 'longitude']) $(id).addEventListener('input', () => syncMap());
 $('centerMap').addEventListener('click', () => syncMap(true));
 document.querySelectorAll('[data-lat]').forEach(b => b.addEventListener('click', () => choose(b.dataset.lat, b.dataset.lon)));

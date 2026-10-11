@@ -5,7 +5,7 @@
   <title>定点 · 本地定位工具</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/vendor/leaflet.css"><link rel="stylesheet" href="/style.css">
-  <script defer src="/vendor/leaflet.js"></script><script defer src="/app.js"></script>
+  <script defer src="/vendor/leaflet.js"></script><script defer src="/map-tools.js"></script><script defer src="/app.js"></script>
 </head>
 <body>
   <div class="shell">
@@ -15,6 +15,11 @@
       <div class="workspace">
         <section class="map-card" aria-label="位置选择地图">
           <div class="map-top"><span><i class="dot"></i> 目标位置</span><span>WGS84 坐标</span></div>
+          <div class="map-search">
+            <form id="searchForm" role="search"><label class="sr-only" for="searchQuery">搜索地名、地址或经纬度</label><input id="searchQuery" type="search" placeholder="搜索地名、地址或纬度, 经度" maxlength="200" autocomplete="off"><button id="searchButton" type="submit">搜索 ↗</button></form>
+            <p id="searchStatus" role="status" aria-live="polite">例如：上海 人民广场，或 31.2304, 121.4737</p>
+            <div id="searchResults" class="search-results" hidden></div>
+          </div>
           <div id="map"></div>
           <div class="map-hint" id="mapHint">点击地图任意位置，放置目标点</div>
           <div class="map-bottom"><span id="mapCoordinate">31.230400, 121.473700</span><button class="text-button" id="centerMap" type="button">回到目标点 ↗</button></div>
