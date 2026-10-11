@@ -5,7 +5,7 @@
   <title>定点 · 本地定位工具</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/vendor/leaflet.css"><link rel="stylesheet" href="/style.css">
-  <script defer src="/vendor/leaflet.js"></script><script defer src="/map-tools.js"></script><script defer src="/app.js"></script>
+  <script defer src="/vendor/leaflet.js"></script><script defer src="/map-tools.js"></script><script defer src="/native-bridge.js"></script><script defer src="/app.js"></script>
 </head>
 <body>
   <div class="shell">
@@ -29,6 +29,7 @@
             <label for="device">已连接设备</label><select id="device"><option value="">等待连接…</option></select>
             <div class="connection-info" id="deviceInfo">请用数据线连接手机，开启 USB 调试，并在手机上允许此电脑。</div>
             <button class="secondary small" id="probe" type="button">检查系统兼容性</button>
+            <button class="secondary small" id="mockSettings" type="button" hidden>选择模拟位置应用</button>
           </section>
           <section class="card location"><div class="card-heading"><h2>设定目标</h2><span class="subtle">固定位置</span></div>
             <form id="locationForm"><div class="coordinates"><div><label for="latitude">纬度</label><input id="latitude" type="number" value="31.2304" min="-90" max="90" step="any" required></div><div><label for="longitude">经度</label><input id="longitude" type="number" value="121.4737" min="-180" max="180" step="any" required></div></div>

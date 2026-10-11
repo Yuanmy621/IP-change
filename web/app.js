@@ -1,4 +1,21 @@
 const $ = id => document.getElementById(id);
+const onPhone = !!window.NativeLocation;
+if (onPhone) {
+  document.body.classList.add('on-phone');
+  document.querySelector('.local-badge').textContent = '在这台手机独立运行';
+  document.querySelector('.intro p').textContent = '选择目标坐标，无需电脑或数据线。';
+  document.querySelector('.step').firstElementChild.textContent = '01 完成授权';
+  document.querySelector('label[for=device]').textContent = '当前设备';
+  document.querySelector('.workspace').prepend(document.querySelector('.connection'));
+  $('probe').textContent = '检查授权状态';
+  document.title = '定点 · 手机定位工具';
+  $('mockSettings').hidden = false;
+  $('mockSettings').addEventListener('click', () => NativeLocation.request('settings/mock').catch(error => notify(error.message, true)));
+  const help = document.querySelectorAll('.help>div');
+  help[0].querySelector('p').textContent = '允许精确定位；在开发者选项中将「定点」选为模拟位置信息应用。';
+  help[1].querySelector('h3').textContent = '通知栏随时恢复';
+  help[1].querySelector('p').textContent = '应用位置后手机端持续刷新坐标。允许通知，并按需在系统中设置后台运行；结束后点击恢复。';
+}
 let token = location.hash.slice(1);
 if (token) { sessionStorage.setItem('locationToken', token); history.replaceState(null, '', '/'); }
 else token = sessionStorage.getItem('locationToken') || '';
@@ -7,6 +24,7 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let cancelMapZoom = () => {}, searchBusy = false;
 function notify(text, error = false) { $('message').textContent = text; $('message').classList.toggle('error', error); $('message').hidden = false; }
 async function api(path, data) {
+  if (onPhone) return NativeLocation.request(path, data);
   const response = await fetch('/api/' + path, { method: data === undefined ? 'GET' : 'POST', headers: { 'X-Session-Token': token, 'Content-Type': 'application/json' }, body: data === undefined ? undefined : JSON.stringify(data) });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || '请求失败');
@@ -19,7 +37,7 @@ function validCoordinate() {
 function buttons() {
   const connected = status?.devices?.some(d => d.serial === $('device').value && d.state === 'device');
   const pending = status?.session && !status?.active;
-  $('apply').disabled = busy || stopped || !connected || !!pending || !validCoordinate();
+  $('apply').disabled = busy || stopped || !connected || !!pending || !validCoordinate() || (onPhone && !status?.ready);
   $('probe').disabled = busy || stopped || !connected;
   $('reset').disabled = busy || stopped || !status?.session;
   $('shutdown').disabled = busy || stopped;
@@ -43,6 +61,7 @@ async function poll() {
     $('connectionState').textContent = connected ? '已连接' : list.some(d => d.state === 'unauthorized') ? '等待授权' : '未连接';
     $('connectionState').classList.toggle('ready', connected);
     if (!connected) { $('deviceInfo').textContent = status.device_error || (list.some(d => d.state === 'unauthorized') ? '请解锁手机，在弹出的提示中允许 USB 调试。' : '请用数据线连接手机，开启 USB 调试，并在手机上允许此电脑。'); lastDevice = ''; }
+    else if (onPhone) { $('deviceInfo').textContent = status.setup || '手机端已就绪，可直接应用目标坐标。'; }
     else if (lastDevice !== $('device').value) { $('deviceInfo').textContent = '连接已就绪。点击检查兼容性，或直接应用目标坐标。'; lastDevice = $('device').value; }
     $('liveState').classList.toggle('active', status.active);
     $('liveState').lastElementChild.textContent = status.active ? '持续提交坐标 · 最近 ' + new Date(status.last_refresh).toLocaleTimeString() : status.session ? '已暂停 · 需要恢复原手机定位' : '尚未启用模拟定位';
@@ -121,7 +140,7 @@ $('locationForm').addEventListener('submit', e => {
   e.preventDefault(); if (!validCoordinate()) { notify('请输入有效的纬度和经度。', true); return; }
   action(async () => { await api('location/set', { serial: $('device').value, latitude: Number($('latitude').value), longitude: Number($('longitude').value), network: $('network').checked }); notify('模拟坐标已提交，并开始持续刷新。请在手机上的目标 App 中检查实际定位。'); });
 });
-$('reset').addEventListener('click', () => action(async () => { await api('location/reset', {}); notify('本工具的模拟定位源已移除，原有权限已恢复。手机重新获取真实位置可能需要一点时间。'); }));
+$('reset').addEventListener('click', () => action(async () => { await api('location/reset', {}); notify(onPhone ? '本工具的模拟定位源已移除。手机重新获取真实位置可能需要一点时间。' : '本工具的模拟定位源已移除，原有权限已恢复。手机重新获取真实位置可能需要一点时间。'); }));
 $('shutdown').addEventListener('click', () => action(async () => { await api('shutdown', {}); stopped = true; status = null; $('connectionState').textContent = '已退出'; $('liveState').classList.remove('active'); $('liveState').lastElementChild.textContent = '工具已退出'; notify('模拟定位已清理，工具已退出。现在可以关闭此网页。'); }));
 let favorites = [];
 try { const stored = JSON.parse(localStorage.getItem('locationFavorites') || '[]'); if (Array.isArray(stored)) favorites = stored.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180).slice(0, 8); } catch (_) {}

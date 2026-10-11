@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer"><title>定点 · 手机定位工具</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;padding:48px 22px;background:#f5f5ef;color:#252d25;font:15px/1.8 system-ui,sans-serif}main{max-width:520px;margin:auto}.icon{width:58px;height:58px;border-radius:18px;background:#425634;color:white;display:grid;place-items:center;font-size:40px}h1{font-size:32px;margin:22px 0 10px}p{color:#74816a}a.button{display:block;text-decoration:none;text-align:center;background:#425634;color:white;border-radius:12px;padding:16px;margin:28px 0 14px}.card{background:#fcfdf9;padding:20px;border:1px solid #dfe3d6;border-radius:14px;margin-top:28px}h2{font-size:17px;margin:0 0 12px}ol{padding-left:24px;color:#66745c}.secondary{color:#536b40}small{color:#89947d}.note{font-size:12px}
+  </style>
+</head>
+<body><main>
+  <div class="icon">◎</div><h1>把位置，定在这里。</h1>
+  <p>打开手机上的定点，选择坐标、搜索地点，随时恢复真实定位。</p>
+  <a id="open" class="button" href="dingdian://open">打开手机定位工具 ↗</a>
+  <p class="note">仅适用于已安装定点的 Android 手机。浏览器可能提示确认打开应用；在微信等内置浏览器中，可改用系统浏览器。</p>
+  <section class="card"><h2>第一次使用</h2><ol><li><a class="secondary" href="dingdian-android.apk" download>下载定点 Android 安装包</a>，按系统提示安装。</li><li>允许精确定位和通知。</li><li>在开发者选项中，将“定点”选为模拟位置信息应用。</li><li>返回定点，选择位置并点击“应用位置”。</li></ol><a class="secondary" href="setup.html">查看 Redmi K80 安装说明 ↗</a></section>
+  <p><small>运行期间无需电脑。结束后，请从页面或通知栏恢复定位。当前提供个人测试版；地图和地名搜索需要网络。</small></p>
+  <script>
+    if (/Android/i.test(navigator.userAgent) && /Chrome\//.test(navigator.userAgent)) document.getElementById('open').href = 'intent://open#Intent;scheme=dingdian;package=com.yuanmy.dingdian;end';
+  </script>
+</main></body>
+</html>

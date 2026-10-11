@@ -16,3 +16,4 @@
 .search-result small{display:block;margin-top:4px;font-size:10px;color:#929b88;font-family:ui-monospace,Menlo,monospace}
 #map .leaflet-tile{filter:none}
 @media(max-width:760px){.map-search{padding:12px 14px 9px}#searchQuery{padding:11px 10px;font-size:11px}#searchButton{padding:0 12px}.search-results{left:14px;right:14px}}
+.on-phone #mockSettings{margin-top:9px}.on-phone #device{pointer-events:none}.on-phone .shell{padding-bottom:12px}.on-phone header{height:72px}.on-phone .local-badge{font-size:10px}.on-phone .workspace{display:flex;flex-direction:column}.on-phone .map-card{min-height:390px}.on-phone #map{min-height:270px}

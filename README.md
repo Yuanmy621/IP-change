@@ -1,8 +1,56 @@
-# 定点 · Mac 本地 Android 模拟定位工具
+# 定点 · Android 模拟定位工具
 
-在 Mac 浏览器中选择目标位置，通过 USB 连接的 Android 手机应用模拟定位。适合个人开发、地图功能调试和位置相关场景测试。
+在地图中选择位置，支持 **手机独立版** 和 **Mac + USB 版**。适合个人开发、地图功能调试和位置相关场景测试。
 
-**一次启动，网页操作。** 手机无需安装本工具的 App，也无需 Root；使用期间需要保持 Mac 程序运行和手机连接。仓库名称中的 `IP-change` 指这个项目，工具实际修改的是定位坐标，**不会改变网络出口 IP**。
+**手机独立版：安装一次，之后通过链接打开。** 在 Android 手机上安装“定点”并将它选为模拟位置信息应用，之后可断开电脑，在手机中选点和恢复定位。原来的 Mac 版仍可使用，不需要在手机安装 App，但使用期间要保持电脑运行和 USB 连接。两种模式均无需 Root。仓库名称中的 `IP-change` 指这个项目，工具实际修改的是定位坐标，**不会改变网络出口 IP**。
+
+## 手机独立版
+
+Android 9 及以上可安装；目前提供个人测试用 APK。网页地图、搜索与收藏界面打包在 App 内，由 Android 前台服务操作测试定位源，每 2 秒刷新一次。链接用于打开已安装的 App；普通浏览器本身无法修改系统定位。
+
+首次使用：
+
+1. 若正在使用 Mac 版，先连接原手机，在 Mac 页面恢复定位并退出工具。
+2. 安装 `dist/定点-Android.apk`，打开“定点”，允许精确位置信息和通知，并开启手机位置信息。
+3. 在手机开发者选项中，将“定点”选为“模拟位置信息应用”。页面提供进入开发者选项的按钮。
+4. 通过入口链接或桌面图标打开，选择目标点并点击“应用位置”。此后日常运行无需电脑或数据线。
+5. 结束时从页面或通知栏点击“恢复真实定位”。恢复会移除本工具创建的测试定位源，保留你的模拟位置应用选择。
+
+当前私人入口：[手机打开定点](https://dingdian-mobile-yuanmy.ymy17360692646.chatgpt.site)，需要登录入口所有者的 ChatGPT 账号，页面提供测试版 APK 下载。手机独立版使用 `dingdian://open` 启动链接；静态入口页源码在 `docs/`。点击链接不会自动应用坐标，仍需在 App 中确认。也可将入口页托管在自己的 HTTPS 网站；同时放置 `dingdian-android.apk`，即可下载和启动。内置浏览器可能限制唤起，请使用手机系统浏览器。
+
+定位服务运行时显示持续通知。HyperOS 后台限制可能停止服务，可在应用电量设置中允许持续运行。进程被终止或手机重启后不会自动续用旧坐标；重新打开 App 后先处理待恢复会话。存在恢复记录时不要清除应用数据或卸载。切换 Mac 版与手机独立版前，应先恢复并退出当前版本。
+
+手机独立版已在 Redmi K80（Android 16 / HyperOS 3.0）验证链接唤起、网页提交坐标、GPS / 网络测试源、切到后台后的持续刷新，以及恢复清理。系统会标记模拟位置，目标 App 是否采用这些坐标仍需实际核对。地图瓦片和地名搜索需要网络，手动输入坐标与位置控制可离线运行。手机独立版不开放网络控制端口，链接不能远程提交坐标。
+
+### 构建手机独立版
+
+准备 JDK 17、Android SDK（Android 36 平台）并在 `android/local.properties` 填写 `sdk.dir=/你的/Android/SDK`，然后运行：
+
+```sh
+./build-android.sh
+```
+
+Gradle Wrapper 自动下载固定版本的 Gradle，并校验下载摘要；首次构建还需联网下载 Android 构建工具。APK 输出到 `dist/定点-Android.apk`。目前使用本机 Android 默认调试签名；如需持续升级已有安装，保留同一签名密钥。正式分发应使用自己的发布签名。
+
+原生代码位于 `android/app/src/main/java/com/yuanmy/dingdian/`，复用 `web/` 静态资源。`native-bridge.js` 仅在安装版内连接受限的原生接口；普通 Mac 浏览器继续使用原来的本机 HTTP 接口。恢复记录保存在 App 私有数据中，禁止备份到云端或转移至其他手机。
+
+验证命令（手机测试需要连接已授权的 Android 设备）：
+
+```sh
+cd android
+./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+./gradlew :app:connectedDebugAndroidTest
+```
+
+`ControllerTest` 使用独立的恢复记录，覆盖无效坐标、异常恢复保护和损坏记录保留，不会注入测试位置。
+
+另外提供显式启用的 `PhoneFlowTest`，通过 WebView 控制界面应用上海参考坐标，验证 GPS / 网络测试源、后台刷新和服务恢复。普通测试运行不会启用该流程。仅在已配置模拟位置授权、没有其他待恢复会话的测试手机上，安装应用和测试 APK 后执行：
+
+```sh
+adb shell am instrument -w -e exerciseMock true \
+  -e class com.yuanmy.dingdian.PhoneFlowTest \
+  com.yuanmy.dingdian.test/android.test.InstrumentationTestRunner
+```
 
 ![定点网页操作界面](preview.png)
 
@@ -35,7 +83,7 @@
 | --- | --- |
 | Mac | 提供 Apple 芯片（arm64）和 Intel（amd64）构建；当前启动器面向 macOS |
 | Android 手机 | 需要 USB 调试授权、开启位置信息，且系统允许 ADB 测试定位操作 |
-| Redmi K80 / HyperOS | 目标适配设备；目前尚未完成真机验证，支持情况以实际检查和应用结果为准 |
+| Redmi K80 / HyperOS | Mac + USB 版及手机独立版均已在 Android 16 / HyperOS 3.0 上验证 GPS 与网络测试源；其他版本仍需核对实际效果 |
 | 运行依赖 | 构建后的程序 + Mac 版 Android SDK Platform-Tools；不需要 Android Studio |
 | 构建依赖 | Go 1.23 或更新版本；只在从源码构建时需要 |
 | 网络 | 地图瓦片需要联网；手动输入坐标和 ADB 控制可离线使用 |
@@ -44,13 +92,13 @@
 
 ## 安装与首次启动
 
-**当前仓库提供源码，尚未发布可直接下载的安装包。** GitHub 的 “Download ZIP” 和 `git clone` 均不包含两种 Mac 启动程序，也不包含 `platform-tools/`；需要完成以下准备后才能双击启动。
+**Mac 版当前提供源码，尚未发布可直接下载的 Mac 程序。** GitHub 的 “Download ZIP” 和 `git clone` 均不包含两种 Mac 启动程序，也不包含 `platform-tools/`；需要完成以下准备后才能双击启动。手机测试版 APK 可从上方手机入口下载。
 
 ### 1. 获取源码
 
 ```sh
-git clone https://github.com/Yuanmy621/mac-IP-change.git
-cd mac-IP-change
+git clone https://github.com/Yuanmy621/IP-change.git
+cd IP-change
 ```
 
 也可以在仓库页面选择 **Code → Download ZIP**，解压后在终端进入项目文件夹。
@@ -74,7 +122,7 @@ cd mac-IP-change
 构建脚本会生成两个 Mac 程序，并设置启动器和 ADB 的执行权限。文件布局应类似：
 
 ```text
-mac-IP-change/
+IP-change/
 ├── 启动定点.command
 ├── 定点-Apple芯片          # 构建生成
 ├── 定点-Intel芯片          # 构建生成
@@ -181,7 +229,7 @@ mac-IP-change/
 ./platform-tools/adb devices -l
 ```
 
-反馈问题时，请在 [Issues](https://github.com/Yuanmy621/mac-IP-change/issues) 中提供 Mac 芯片类型、手机型号、Android / HyperOS 版本、操作步骤和完整错误文字。分享截图或日志前移除设备序列号、私人坐标及会话凭证。
+反馈问题时，请在 [Issues](https://github.com/Yuanmy621/IP-change/issues) 中提供 Mac 芯片类型、手机型号、Android / HyperOS 版本、操作步骤和完整错误文字。分享截图或日志前移除设备序列号、私人坐标及会话凭证。
 
 ## 工作原理与本地数据
 

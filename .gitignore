@@ -3,3 +3,10 @@ dist/
 定点-Apple芯片
 定点-Intel芯片
 platform-tools/
+.tools/
+.sites/
+android/.gradle/
+android/**/build/
+android/local.properties
+*.jks
+*.keystore
