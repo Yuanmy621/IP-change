@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>定点 · 本地定位工具</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/vendor/leaflet.css"><link rel="stylesheet" href="/style.css">
+  <script defer src="/vendor/leaflet.js"></script><script defer src="/app.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <header><a class="brand" href="/" aria-label="定点首页"><span class="brand-icon">◎</span><span>定点<small>LOCAL LOCATION</small></span></a><span class="local-badge"><i></i> 仅在这台 Mac 上运行</span></header>
+    <main>
+      <div class="intro"><div><span class="eyebrow">一处选择，即刻出发</span><h1>把位置，定在这里。</h1><p>连接你的 Redmi K80，在地图上选择下一站。</p></div><div class="step"><span>01 连接手机</span><b>—</b><span>02 选择坐标</span><b>—</b><span>03 应用位置</span></div></div>
+      <div class="workspace">
+        <section class="map-card" aria-label="位置选择地图">
+          <div class="map-top"><span><i class="dot"></i> 目标位置</span><span>WGS84 坐标</span></div>
+          <div id="map"></div>
+          <div class="map-hint" id="mapHint">点击地图任意位置，放置目标点</div>
+          <div class="map-bottom"><span id="mapCoordinate">31.230400, 121.473700</span><button class="text-button" id="centerMap" type="button">回到目标点 ↗</button></div>
+        </section>
+        <aside>
+          <section class="card connection"><div class="card-heading"><h2>你的手机</h2><span class="state-badge" id="connectionState">正在检查</span></div>
+            <label for="device">已连接设备</label><select id="device"><option value="">等待连接…</option></select>
+            <div class="connection-info" id="deviceInfo">请用数据线连接手机，开启 USB 调试，并在手机上允许此电脑。</div>
+            <button class="secondary small" id="probe" type="button">检查系统兼容性</button>
+          </section>
+          <section class="card location"><div class="card-heading"><h2>设定目标</h2><span class="subtle">固定位置</span></div>
+            <form id="locationForm"><div class="coordinates"><div><label for="latitude">纬度</label><input id="latitude" type="number" value="31.2304" min="-90" max="90" step="any" required></div><div><label for="longitude">经度</label><input id="longitude" type="number" value="121.4737" min="-180" max="180" step="any" required></div></div>
+              <label class="section-label">快速选择</label><div class="places"><button type="button" data-lat="39.9042" data-lon="116.4074">北京</button><button type="button" data-lat="31.2304" data-lon="121.4737">上海</button><button type="button" data-lat="23.1291" data-lon="113.2644">广州</button><button type="button" id="savePlace">＋ 收藏</button></div><div class="places saved" id="savedPlaces"></div>
+              <label class="check"><input type="checkbox" id="network"><span>同时模拟网络定位<small>部分 App 会优先使用网络定位；更改前需先恢复。</small></span></label>
+              <button class="primary" id="apply" type="submit" disabled><span>应用位置</span><span>↗</span></button>
+            </form>
+            <button class="secondary" id="reset" type="button" disabled>恢复真实定位</button>
+            <div class="live-state" id="liveState"><i></i><span>尚未启用模拟定位</span></div>
+          </section>
+        </aside>
+      </div>
+      <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+      <section class="help"><div><span class="help-icon">↳</span><h3>第一次使用</h3><p>在手机设置中开启开发者选项和 USB 调试，解锁手机并允许调试授权。手机的位置信息开关也需要开启。</p></div><div><span class="help-icon">◎</span><h3>使用时保持连接</h3><p>工具每 2 秒提交一次坐标。Mac 休眠、手机断线或程序关闭后无法继续刷新；请在拔线前恢复定位。</p></div><div><span class="help-icon">↗</span><h3>以手机实际表现为准</h3><p>接口可用不代表所有 App 都采用模拟坐标。系统会标记模拟位置；高德、百度坐标需先转换为 WGS84。</p></div></section>
+    </main>
+    <footer><span>定点 · 本机控制 / 无需云服务</span><button class="text-button" id="shutdown" type="button">恢复定位并退出工具 ↗</button></footer>
+  </div>
+</body>
+</html>
