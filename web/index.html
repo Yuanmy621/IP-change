@@ -1,51 +1,481 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>定点 · 本地定位工具</title>
-  <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="/vendor/leaflet.css"><link rel="stylesheet" href="/style.css">
-  <script defer src="/vendor/leaflet.js"></script><script defer src="/map-tools.js"></script><script defer src="/native-bridge.js"></script><script defer src="/app.js"></script>
-</head>
-<body>
-  <div class="shell">
-    <header><a class="brand" href="/" aria-label="定点首页"><span class="brand-icon">◎</span><span>定点<small>LOCAL LOCATION</small></span></a><span class="local-badge"><i></i> 仅在这台 Mac 上运行</span></header>
-    <main>
-      <div class="intro"><div><span class="eyebrow">一处选择，即刻出发</span><h1>把位置，定在这里。</h1><p>连接你的 Redmi K80，在地图上选择下一站。</p></div><div class="step"><span>01 连接手机</span><b>—</b><span>02 选择坐标</span><b>—</b><span>03 应用位置</span></div></div>
-      <div class="workspace">
+<html lang="zh-CN" class="wa-dark" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark light" />
+    <title>定点 · 定位工作台</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/vendor/leaflet.css" />
+    <link rel="stylesheet" href="/vendor/components.css" />
+    <link rel="stylesheet" href="/style.css" />
+    <script defer src="/vendor/leaflet.js"></script>
+    <script defer src="/map-tools.js"></script>
+    <script defer src="/native-bridge.js"></script>
+    <script defer src="/vendor/components.js"></script>
+    <script defer src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#searchQuery">跳转到位置搜索</a>
+    <div class="shell">
+      <nav class="sidebar" aria-label="工作台导航">
+        <a class="brand" href="/" aria-label="定点首页"
+          ><span class="brand-icon"><i data-lucide="map-pin"></i></span
+          ><span>定点<small>你的定位工作空间</small></span></a
+        >
+        <div class="nav-label">工作空间</div>
+        <button
+          class="nav-item selected"
+          id="workspaceNav"
+          type="button"
+          aria-current="page"
+        >
+          <i data-lucide="map"></i>定位工作台<span class="nav-key">1</span>
+        </button>
+        <button
+          class="nav-item"
+          id="favoritesNav"
+          type="button"
+          data-open="favoritesDrawer"
+        >
+          <i data-lucide="bookmark"></i>收藏位置<span
+            class="count"
+            id="favoritesCount"
+            >0</span
+          >
+        </button>
+        <div class="sidebar-note">
+          <span class="status-dot"></span
+          ><span>坐标留在本机<small>无需云端控制服务</small></span>
+        </div>
+        <div class="sidebar-bottom">
+          <button class="nav-item" type="button" data-open="settingsDialog">
+            <i data-lucide="settings-2"></i>设备与设置</button
+          ><button class="nav-item" type="button" data-open="helpDialog">
+            <i data-lucide="circle-help"></i>使用指南
+          </button>
+          <div class="sidebar-version">定点 <span>本地定位工具</span></div>
+        </div>
+      </nav>
+      <header class="topbar">
+        <div class="breadcrumb">
+          <span class="desktop-label"
+            >工作空间 <i data-lucide="chevron-right"></i></span
+          ><span class="mobile-brand"><i data-lucide="map-pin"></i>定点</span
+          ><strong>定位工作台</strong
+          ><span class="mode-badge" id="runtimeMode">USB 控制</span>
+        </div>
+        <div class="header-actions">
+          <span class="local-badge"
+            ><span class="status-dot"></span
+            ><span id="runtimeLabel">本机运行</span></span
+          ><button
+            class="icon-button mobile-only"
+            type="button"
+            data-open="favoritesDrawer"
+            aria-label="收藏位置"
+          >
+            <i data-lucide="bookmark"></i></button
+          ><button
+            class="icon-button"
+            type="button"
+            data-open="settingsDialog"
+            aria-label="设备与设置"
+          >
+            <i data-lucide="settings-2"></i></button
+          ><button
+            class="icon-button"
+            id="themeCycle"
+            type="button"
+            aria-label="切换主题"
+            title="切换主题"
+          >
+            <i data-lucide="moon"></i>
+          </button>
+        </div>
+      </header>
+      <main class="workspace" id="workspace">
         <section class="map-card" aria-label="位置选择地图">
-          <div class="map-top"><span><i class="dot"></i> 目标位置</span><span>WGS84 坐标</span></div>
-          <div class="map-search">
-            <form id="searchForm" role="search"><label class="sr-only" for="searchQuery">搜索地名、地址或经纬度</label><input id="searchQuery" type="search" placeholder="搜索地名、地址或纬度, 经度" maxlength="200" autocomplete="off"><button id="searchButton" type="submit">搜索 ↗</button></form>
-            <p id="searchStatus" role="status" aria-live="polite">例如：上海 人民广场，或 31.2304, 121.4737</p>
-            <div id="searchResults" class="search-results" hidden></div>
+          <div class="map-toolbar">
+            <div class="map-heading">
+              <h1>选择目标位置</h1>
+              <span class="coordinate-tag">WGS84</span>
+            </div>
+            <div class="map-search">
+              <form id="searchForm" role="search">
+                <i data-lucide="search"></i
+                ><label class="sr-only" for="searchQuery"
+                  >搜索地名、地址或经纬度</label
+                ><input
+                  id="searchQuery"
+                  type="search"
+                  placeholder="搜索地点，或输入纬度、经度"
+                  maxlength="200"
+                  autocomplete="off"
+                /><kbd>⌘ K</kbd
+                ><button id="searchButton" type="submit">搜索</button>
+              </form>
+              <p id="searchStatus" role="status" aria-live="polite">
+                输入地名或坐标，在地图上选择目标。
+              </p>
+              <div id="searchResults" class="search-results" hidden></div>
+            </div>
           </div>
-          <div id="map"></div>
-          <div class="map-hint" id="mapHint">点击地图任意位置，放置目标点</div>
-          <div class="map-bottom"><span id="mapCoordinate">31.230400, 121.473700</span><button class="text-button" id="centerMap" type="button">回到目标点 ↗</button></div>
+          <div class="map-stage">
+            <div id="map"></div>
+            <div class="map-hint" id="mapHint">
+              <i data-lucide="mouse-pointer-2"></i
+              ><span>点击地图，选择一个位置</span>
+            </div>
+            <div class="map-controls" aria-label="地图工具">
+              <button
+                class="icon-button"
+                id="zoomIn"
+                type="button"
+                aria-label="放大地图"
+              >
+                <i data-lucide="plus"></i></button
+              ><button
+                class="icon-button"
+                id="zoomOut"
+                type="button"
+                aria-label="缩小地图"
+              >
+                <i data-lucide="minus"></i></button
+              ><span></span
+              ><button
+                class="icon-button"
+                id="centerMap"
+                type="button"
+                aria-label="回到目标位置"
+              >
+                <i data-lucide="locate-fixed"></i>
+              </button>
+            </div>
+          </div>
+          <div class="map-bottom">
+            <span
+              ><span class="target-dot"></span
+              ><span id="mapCoordinate">31.230400, 121.473700</span></span
+            ><span>© OpenStreetMap</span>
+          </div>
         </section>
-        <aside>
-          <section class="card connection"><div class="card-heading"><h2>你的手机</h2><span class="state-badge" id="connectionState">正在检查</span></div>
-            <label for="device">已连接设备</label><select id="device"><option value="">等待连接…</option></select>
-            <div class="connection-info" id="deviceInfo">请用数据线连接手机，开启 USB 调试，并在手机上允许此电脑。</div>
-            <button class="secondary small" id="probe" type="button">检查系统兼容性</button>
-            <button class="secondary small" id="mockSettings" type="button" hidden>选择模拟位置应用</button>
-          </section>
-          <section class="card location"><div class="card-heading"><h2>设定目标</h2><span class="subtle">固定位置</span></div>
-            <form id="locationForm"><div class="coordinates"><div><label for="latitude">纬度</label><input id="latitude" type="number" value="31.2304" min="-90" max="90" step="any" required></div><div><label for="longitude">经度</label><input id="longitude" type="number" value="121.4737" min="-180" max="180" step="any" required></div></div>
-              <label class="section-label">快速选择</label><div class="places"><button type="button" data-lat="39.9042" data-lon="116.4074">北京</button><button type="button" data-lat="31.2304" data-lon="121.4737">上海</button><button type="button" data-lat="23.1291" data-lon="113.2644">广州</button><button type="button" id="savePlace">＋ 收藏</button></div><div class="places saved" id="savedPlaces"></div>
-              <label class="check"><input type="checkbox" id="network"><span>同时模拟网络定位<small>部分 App 会优先使用网络定位；更改前需先恢复。</small></span></label>
-              <button class="primary" id="apply" type="submit" disabled><span>应用位置</span><span>↗</span></button>
+        <aside class="inspector" aria-label="位置控制面板">
+          <div id="desktopDeviceSlot">
+            <section class="card connection" id="connectionCard">
+              <div class="card-heading">
+                <h2>
+                  <i data-lucide="smartphone"></i
+                  ><span id="deviceHeading">连接设备</span>
+                </h2>
+                <span class="state-badge" id="connectionState">检查中</span>
+              </div>
+              <label for="device">已连接设备</label
+              ><select id="device">
+                <option value="">等待连接…</option>
+              </select>
+              <p class="connection-info" id="deviceInfo">
+                用数据线连接手机，开启 USB 调试并允许此电脑。
+              </p>
+              <button class="secondary small" id="probe" type="button">
+                <i data-lucide="refresh-cw"></i
+                ><span>检查系统兼容性</span></button
+              ><button
+                class="secondary small"
+                id="mockSettings"
+                type="button"
+                hidden
+              >
+                <i data-lucide="shield-check"></i>选择模拟位置应用
+              </button>
+            </section>
+          </div>
+          <section class="card location" id="locationPanel">
+            <button
+              class="panel-handle mobile-only"
+              id="panelToggle"
+              type="button"
+              aria-label="展开位置选项"
+              aria-expanded="false"
+              aria-controls="locationDetails"
+            >
+              <span></span>
+            </button>
+            <div class="card-heading target-heading">
+              <div>
+                <span class="section-kicker">当前目标</span>
+                <h2 id="targetName">上海 · 参考坐标</h2>
+              </div>
+              <button
+                class="icon-button"
+                id="savePlace"
+                type="button"
+                aria-label="收藏当前位置"
+                title="收藏当前位置"
+              >
+                <i data-lucide="bookmark-plus"></i>
+              </button>
+            </div>
+            <form id="locationForm">
+              <div class="coordinates">
+                <div>
+                  <label for="latitude">纬度 <span>LAT</span></label
+                  ><input
+                    id="latitude"
+                    type="number"
+                    inputmode="decimal"
+                    value="31.2304"
+                    min="-90"
+                    max="90"
+                    step="any"
+                    required
+                  />
+                </div>
+                <div>
+                  <label for="longitude">经度 <span>LNG</span></label
+                  ><input
+                    id="longitude"
+                    type="number"
+                    inputmode="decimal"
+                    value="121.4737"
+                    min="-180"
+                    max="180"
+                    step="any"
+                    required
+                  />
+                </div>
+              </div>
+              <div id="locationDetails" class="location-details">
+                <div class="section-row">
+                  <h3>快速选择</h3>
+                  <button
+                    class="text-button"
+                    type="button"
+                    data-open="favoritesDrawer"
+                  >
+                    查看收藏 <i data-lucide="chevron-right"></i>
+                  </button>
+                </div>
+                <div class="places">
+                  <button
+                    type="button"
+                    data-lat="39.9042"
+                    data-lon="116.4074"
+                    data-name="北京 · 参考坐标"
+                  >
+                    北京</button
+                  ><button
+                    type="button"
+                    data-lat="31.2304"
+                    data-lon="121.4737"
+                    data-name="上海 · 参考坐标"
+                  >
+                    上海</button
+                  ><button
+                    type="button"
+                    data-lat="23.1291"
+                    data-lon="113.2644"
+                    data-name="广州 · 参考坐标"
+                  >
+                    广州
+                  </button>
+                </div>
+                <label class="check" for="network"
+                  ><span
+                    ><strong>同时模拟网络定位</strong
+                    ><small>部分应用会优先使用此定位源</small></span
+                  ><input type="checkbox" id="network" /><span
+                    class="switch-track"
+                    aria-hidden="true"
+                  ></span
+                ></label>
+                <p class="field-note">启用后，更改定位源前需先恢复。</p>
+              </div>
+              <div class="action-area">
+                <button class="primary" id="apply" type="submit" disabled>
+                  <span>应用位置</span
+                  ><i data-lucide="arrow-up-right"></i></button
+                ><button class="secondary" id="reset" type="button" disabled>
+                  <i data-lucide="rotate-ccw"></i>恢复真实定位
+                </button>
+              </div>
             </form>
-            <button class="secondary" id="reset" type="button" disabled>恢复真实定位</button>
-            <div class="live-state" id="liveState"><i></i><span>尚未启用模拟定位</span></div>
+            <div class="live-state" id="liveState">
+              <i></i><span>尚未启用模拟定位</span>
+            </div>
           </section>
+          <div class="inspector-note">
+            <i data-lucide="info"></i>
+            <p>
+              结束使用时，请先<strong>恢复真实定位</strong>。<span
+                id="connectionReminder"
+                >运行期间保持 USB 连接。</span
+              >
+            </p>
+            <button class="text-button" type="button" data-open="helpDialog">
+              使用指南 <i data-lucide="arrow-up-right"></i>
+            </button>
+          </div>
         </aside>
+      </main>
+      <footer>
+        <span
+          ><span class="status-dot"></span><span id="footerMode">Mac / USB</span
+          ><span class="footer-divider">·</span><span>WGS84 坐标</span></span
+        ><button class="text-button" id="shutdown" type="button">
+          <i data-lucide="power"></i><span>恢复并退出</span>
+        </button>
+      </footer>
+    </div>
+    <div id="message" class="message" role="status" aria-live="polite" hidden>
+      <span id="messageText"></span
+      ><button
+        id="dismissMessage"
+        class="icon-button"
+        type="button"
+        aria-label="关闭提示"
+      >
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <wa-dialog
+      id="settingsDialog"
+      label="设备与设置"
+      without-header
+      light-dismiss
+      ><div class="overlay-heading">
+        <div>
+          <span class="section-kicker">工作空间</span>
+          <h2>设备与设置</h2>
+        </div>
+        <button
+          class="icon-button"
+          type="button"
+          data-close="settingsDialog"
+          aria-label="关闭设备与设置"
+        >
+          <i data-lucide="x"></i>
+        </button>
       </div>
-      <div id="message" class="message" role="status" aria-live="polite" hidden></div>
-      <section class="help"><div><span class="help-icon">↳</span><h3>第一次使用</h3><p>在手机设置中开启开发者选项和 USB 调试，解锁手机并允许调试授权。手机的位置信息开关也需要开启。</p></div><div><span class="help-icon">◎</span><h3>使用时保持连接</h3><p>工具每 2 秒提交一次坐标。Mac 休眠、手机断线或程序关闭后无法继续刷新；请在拔线前恢复定位。</p></div><div><span class="help-icon">↗</span><h3>以手机实际表现为准</h3><p>接口可用不代表所有 App 都采用模拟坐标。系统会标记模拟位置；高德、百度坐标需先转换为 WGS84。</p></div></section>
-    </main>
-    <footer><span>定点 · 本机控制 / 无需云服务</span><button class="text-button" id="shutdown" type="button">恢复定位并退出工具 ↗</button></footer>
-  </div>
-</body>
+      <div id="mobileDeviceSlot"></div>
+      <section class="settings-section">
+        <div class="section-row">
+          <h3><i data-lucide="palette"></i>外观</h3>
+          <span class="subtle">Linear</span>
+        </div>
+        <p>柔和灰阶，清晰层级，重点信息使用强调色。</p>
+        <fieldset class="theme-options">
+          <legend class="sr-only">界面主题</legend>
+          <label
+            ><input type="radio" name="theme" value="dark" /><i
+              data-lucide="moon"
+            ></i
+            >深色</label
+          ><label
+            ><input type="radio" name="theme" value="light" /><i
+              data-lucide="sun"
+            ></i
+            >浅色</label
+          ><label
+            ><input type="radio" name="theme" value="system" /><i
+              data-lucide="monitor"
+            ></i
+            >跟随系统</label
+          >
+        </fieldset>
+      </section>
+      <section class="settings-section">
+        <div class="section-row">
+          <h3>运行方式</h3>
+          <span class="subtle" id="settingsMode">Mac / USB</span>
+        </div>
+        <p id="settingsRuntime">
+          网页仅控制这台 Mac 上的定位服务。应用位置后，保持电脑运行与 USB 连接。
+        </p>
+      </section>
+      <div class="settings-actions">
+        <button class="secondary" type="button" data-open="helpDialog">
+          <i data-lucide="circle-help"></i>使用指南</button
+        ><button class="secondary" id="settingsShutdown" type="button">
+          <i data-lucide="power"></i>恢复并退出
+        </button>
+      </div>
+      <button class="secondary" type="button" data-close="settingsDialog">
+        完成
+      </button></wa-dialog
+    >
+    <wa-drawer
+      id="favoritesDrawer"
+      label="收藏位置"
+      without-header
+      light-dismiss
+      placement="end"
+      ><div class="overlay-heading">
+        <div>
+          <span class="section-kicker">你的地点</span>
+          <h2>收藏位置 <span class="subtle" id="drawerCount">0 / 8</span></h2>
+        </div>
+        <button
+          class="icon-button"
+          type="button"
+          data-close="favoritesDrawer"
+          aria-label="关闭收藏位置"
+        >
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <p class="overlay-description">常用坐标，随时回到这里。</p>
+      <div id="savedPlaces" class="saved-places"></div>
+      <div id="favoritesEmpty" class="empty-state">
+        <i data-lucide="bookmark"></i>
+        <h3>还没有收藏位置</h3>
+        <p>选定一个位置，点击目标旁的收藏按钮。</p>
+      </div>
+      <button class="secondary" type="button" id="saveFromDrawer">
+        <i data-lucide="bookmark-plus"></i>收藏当前目标
+      </button></wa-drawer
+    >
+    <wa-dialog id="helpDialog" label="使用指南" without-header light-dismiss
+      ><div class="overlay-heading">
+        <div>
+          <span class="section-kicker">开始使用</span>
+          <h2>使用指南</h2>
+        </div>
+        <button
+          class="icon-button"
+          type="button"
+          data-close="helpDialog"
+          aria-label="关闭使用指南"
+        >
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="help">
+        <wa-details summary="01 · 连接与授权" open
+          ><p id="setupHelp">
+            手机开启开发者选项和 USB 调试，用数据线连接
+            Mac，解锁手机并允许调试授权。手机的位置信息开关也需要开启。
+          </p></wa-details
+        ><wa-details summary="02 · 选择与应用"
+          ><p>
+            搜索地名或输入“纬度,
+            经度”，也可以点击地图选点。确认目标坐标后点击“应用位置”。高德、百度坐标需先转换为
+            WGS84。
+          </p></wa-details
+        ><wa-details summary="03 · 结束与恢复"
+          ><p id="restoreHelp">
+            工具每 2
+            秒刷新坐标。拔线或关闭程序前，请先点击“恢复真实定位”。如连接中断，请连接原手机并重新打开工具处理恢复。
+          </p></wa-details
+        >
+      </div>
+      <p class="help-footnote">
+        系统会标记模拟位置。工具修改定位坐标，不会改变网络出口
+        IP；目标应用是否采用坐标，请以实际表现为准。
+      </p></wa-dialog
+    >
+  </body>
 </html>

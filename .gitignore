@@ -1,4 +1,5 @@
 .runtime/
+node_modules/
 dist/
 定点-Apple芯片
 定点-Intel芯片

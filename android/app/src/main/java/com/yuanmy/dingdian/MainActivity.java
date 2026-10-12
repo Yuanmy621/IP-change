@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class MainActivity extends Activity {
     private static final String HOST = "appassets.androidplatform.net";
     private WebView web;
+    private FrameLayout container;
     private LocationController controller;
     private final PlaceSearch search = new PlaceSearch();
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
@@ -39,7 +40,7 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         controller = ((DingDianApp) getApplication()).controller();
-        web = new WebView(this); web.setBackgroundColor(Color.rgb(245, 245, 239));
+        web = new WebView(this); web.setBackgroundColor(Color.rgb(20, 20, 22));
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(false); settings.setAllowContentAccess(false);
@@ -57,7 +58,7 @@ public final class MainActivity extends Activity {
                 if (path == null || path.equals("/")) path = "/index.html";
                 if (!"GET".equals(request.getMethod()) || path.contains("..")) return response(403, "Forbidden", "text/plain", new ByteArrayInputStream(new byte[0]));
                 try {
-                    String mime = path.endsWith(".html") ? "text/html" : path.endsWith(".js") ? "application/javascript" : path.endsWith(".css") ? "text/css" : path.endsWith(".png") ? "image/png" : "application/octet-stream";
+                    String mime = path.endsWith(".html") ? "text/html" : path.endsWith(".js") ? "application/javascript" : path.endsWith(".css") ? "text/css" : path.endsWith(".svg") ? "image/svg+xml" : path.endsWith(".png") ? "image/png" : "application/octet-stream";
                     return response(200, "OK", mime, getAssets().open(path.substring(1)));
                 } catch (Exception e) { return response(404, "Not Found", "text/plain", new ByteArrayInputStream(new byte[0])); }
             }
@@ -68,7 +69,8 @@ public final class MainActivity extends Activity {
                 return true;
             }
         });
-        FrameLayout container = new FrameLayout(this);
+        container = new FrameLayout(this);
+        container.setBackgroundColor(Color.rgb(20, 20, 22));
         container.addView(web, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         if (Build.VERSION.SDK_INT >= 30) container.setOnApplyWindowInsetsListener((view, insets) -> {
             android.graphics.Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
@@ -77,13 +79,13 @@ public final class MainActivity extends Activity {
         setContentView(container);
         container.requestApplyInsets();
         if (Build.VERSION.SDK_INT >= 30 && getWindow().getInsetsController() != null)
-            getWindow().getInsetsController().setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+            getWindow().getInsetsController().setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
         web.loadUrl("https://" + HOST + "/");
         requestSetupPermissions();
     }
     private WebResourceResponse response(int code, String reason, String mime, java.io.InputStream body) {
         Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'");
+        headers.put("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'");
         headers.put("X-Content-Type-Options", "nosniff");
         return new WebResourceResponse(mime, "UTF-8", code, reason, headers, body);
     }
@@ -104,6 +106,24 @@ public final class MainActivity extends Activity {
     private Object dispatch(String path, JSONObject data) throws Exception {
         JSONObject ok = new JSONObject().put("ok", true);
         switch (path) {
+            case "appearance/theme":
+                final boolean dark = data.optBoolean("dark", true);
+                ui(() -> {
+                    int background = dark ? Color.rgb(20, 20, 22) : Color.rgb(247, 247, 248);
+                    web.setBackgroundColor(background); container.setBackgroundColor(background);
+                    if (Build.VERSION.SDK_INT < 35) {
+                        getWindow().setStatusBarColor(background);
+                        getWindow().setNavigationBarColor(background);
+                    }
+                    if (Build.VERSION.SDK_INT >= 30 && getWindow().getInsetsController() != null) {
+                        int flags = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                        getWindow().getInsetsController().setSystemBarsAppearance(dark ? 0 : flags, flags);
+                    } else if (Build.VERSION.SDK_INT < 30) {
+                        int flags = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                        int current = getWindow().getDecorView().getSystemUiVisibility();
+                        getWindow().getDecorView().setSystemUiVisibility(dark ? current & ~flags : current | flags);
+                    }
+                }); return ok;
             case "status": return controller.status();
             case "probe": return new JSONObject().put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("hyperos", "手机独立版").put("interface", controller.setup());
             case "settings/mock":

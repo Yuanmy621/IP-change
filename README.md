@@ -54,7 +54,18 @@ adb shell am instrument -w -e exerciseMock true \
   com.yuanmy.dingdian.test/android.test.InstrumentationTestRunner
 ```
 
-![定点网页操作界面](preview.png)
+## 界面与主题
+
+开发版采用 Linear 风格的中性灰阶与紫色强调色，支持深色、浅色和跟随系统。桌面提供侧栏、地图和右侧操作区；手机竖屏使用地图与底部面板，横屏将地图和操作区并排。手机授权设置收纳在右上角的设置中。
+
+搜索支持地名、地址和坐标，桌面可按 `⌘K` / `Ctrl+K` 聚焦搜索框。收藏通过抽屉管理，并提供独立删除按钮。手机展开底部面板后可选择快捷城市及网络定位源，应用和恢复按钮保留在操作区。
+
+以下为开发版界面预览（使用模拟设备），尚未发布到 v1.0.0 Release。设计参考、组件选型和维护方式见 [界面设计说明](docs/UI_DESIGN.md)。
+
+![Linear 深色桌面工作台](docs/images/desktop-dark.jpg)
+
+<img src="docs/images/phone-dark.jpg" alt="Linear 深色手机底部面板" width="390">
+
 
 ## 目录
 
@@ -193,7 +204,7 @@ IP-change/
 
 纬度范围为 `-90～90`，经度范围为 `-180～180`。工具按 **WGS84** 处理，不自动转换坐标系。高德的 GCJ-02 或百度的 BD-09 坐标需要先转换，否则可能出现偏移；城市快捷按钮只是参考点。
 
-点击“收藏此位置”可保存当前坐标，最多保留 8 个。收藏保存在当前浏览器的本地存储中；点击收藏可选定坐标，按住 **Option** 点击可删除。清理浏览器数据会移除收藏。
+点击目标旁的收藏按钮可保存当前坐标与名称，最多保留 8 个。在“收藏位置”抽屉中点击地点可选定坐标，点击该行的删除按钮可移除。收藏保存在当前浏览器的本地存储中，清理浏览器数据会移除收藏。
 
 ## 恢复定位与异常退出
 
@@ -268,7 +279,9 @@ flowchart LR
 | `search.go` / `search_test.go` | 地名查询、缓存、限流与对应测试 |
 | `web_test.cjs` | 浏览器坐标解析测试 |
 | `main_test.go` | 模拟设备与 HTTP 接口测试 |
-| `web/` | HTML、CSS、JavaScript 与 Leaflet 资源 |
+| `web/` | HTML、CSS、JavaScript 与本地打包的 UI / Leaflet 资源 |
+| `ui/components.js` / `scripts/build-ui.mjs` | Web Awesome 与 Lucide 的按需打包入口 |
+| `scripts/preview-ui.cjs` | 不控制真实设备的界面预览服务 |
 | `build.sh` | 构建两种 Mac 架构的程序 |
 | `启动定点.command` | 自动选择芯片版本并启动 |
 
@@ -276,11 +289,28 @@ flowchart LR
 
 ```sh
 go test -race ./...
-node --test web_test.cjs
+node --test web_test.cjs scripts/preview-search.test.cjs
 ./build.sh
 ```
 
 前端坐标解析测试需要 Node.js。测试覆盖地名查询、缓存与限流、坐标解析、输入校验、权限拒绝、部分初始化失败回滚、断线与重启恢复、现有模拟定位保护、设备或定位源切换限制，以及接口访问限制。测试使用模拟设备，不会对手机应用模拟坐标，也不能替代真机兼容性验证。
+
+### 修改界面组件
+
+组件产物已保存在 `web/vendor/`，通常修改 `web/index.html`、`web/style.css` 或 `web/app.js` 后直接重新构建 Mac / Android 即可。只有修改 `ui/components.js` 或更新组件版本时才需要 Node.js 20 及以上：
+
+```sh
+npm ci
+npm run build:ui
+```
+
+通过模拟设备预览 UI，无需连接手机，也不会修改定位：
+
+```sh
+npm run preview
+```
+
+打开 `http://127.0.0.1:18766/` 预览 Mac 模式，`http://127.0.0.1:18766/?mode=phone` 预览手机原生桥接模式，再使用浏览器设备尺寸查看手机排版。地名搜索通过 Photon 联网查询，坐标在本地解析；设备与定位操作为模拟，会话仅保存在预览进程内，收藏和主题使用这个预览站点的本地存储。验证真实设备仍需运行正式程序或安装 APK。
 
 ### 命令行参数
 
@@ -333,3 +363,7 @@ Apple 芯片示例（Intel Mac 将程序名替换为 `定点-Intel芯片`）：
 - [Android 测试定位命令源码](https://android.googlesource.com/platform/frameworks/base/+/android16-release/services/core/java/com/android/server/location/LocationShellCommand.java)：测试定位接口参考，设备实际支持情况以系统提供的命令为准。
 - [Leaflet 1.9.4](https://leafletjs.com/download.html)：地图交互组件，许可证见 [Leaflet-LICENSE](web/vendor/Leaflet-LICENSE)。
 - [OpenStreetMap](https://www.openstreetmap.org/copyright)：地图数据与瓦片，页面保留地图署名。
+
+- [Web Awesome 3.14.0](https://github.com/shoelace-style/webawesome)：免费版 Dialog、Drawer、Details；MIT 许可证见 [WebAwesome-LICENSE](web/vendor/WebAwesome-LICENSE)。
+- [Lucide 1.55.0](https://github.com/lucide-icons/lucide)：SVG 图标；ISC 许可证见 [Lucide-LICENSE](web/vendor/Lucide-LICENSE)。
+- [Linear 官方设计说明](https://linear.app/now/behind-the-latest-design-refresh)：灰阶、视觉层级及布局参考。

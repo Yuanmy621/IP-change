@@ -1,0 +1,14 @@
+{
+  "name": "dingdian-ui",
+  "private": true,
+  "scripts": {
+    "build:ui": "node scripts/build-ui.mjs",
+    "test": "node --test web_test.cjs scripts/preview-search.test.cjs",
+    "preview": "node scripts/preview-ui.cjs"
+  },
+  "devDependencies": {
+    "@awesome.me/webawesome": "3.14.0",
+    "esbuild": "0.25.12",
+    "lucide": "1.55.0"
+  }
+}
