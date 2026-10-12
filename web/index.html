@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="/style.css" />
     <script defer src="/vendor/leaflet.js"></script>
     <script defer src="/map-tools.js"></script>
+    <script defer src="/map-loading.js"></script>
+    <script defer src="/coordinate-systems.js"></script>
     <script defer src="/native-bridge.js"></script>
     <script defer src="/vendor/components.js"></script>
     <script defer src="/app.js"></script>
@@ -127,11 +129,16 @@
           </div>
           <div class="map-stage">
             <div id="map"></div>
+            <div id="mapNotice" class="map-notice" role="status" aria-live="polite" hidden>
+              <span id="mapNoticeText"></span>
+              <button id="retryMap" type="button" hidden>重试底图</button>
+            </div>
             <div class="map-hint" id="mapHint">
               <i data-lucide="mouse-pointer-2"></i
               ><span>点击地图，选择一个位置</span>
             </div>
             <div class="map-controls" aria-label="地图工具">
+              <button class="icon-button" id="currentLocation" type="button" aria-label="获取当前位置" title="获取当前位置"><i data-lucide="navigation"></i></button>
               <button
                 class="icon-button"
                 id="zoomIn"
@@ -160,7 +167,7 @@
           <div class="map-bottom">
             <span
               ><span class="target-dot"></span
-              ><span id="mapCoordinate">31.230400, 121.473700</span></span
+              ><span id="mapCoordinate">尚未获取当前位置</span></span
             ><span>© OpenStreetMap</span>
           </div>
         </section>
@@ -208,7 +215,7 @@
             <div class="card-heading target-heading">
               <div>
                 <span class="section-kicker">当前目标</span>
-                <h2 id="targetName">上海 · 参考坐标</h2>
+                <h2 id="targetName">等待当前位置</h2>
               </div>
               <button
                 class="icon-button"
@@ -228,7 +235,7 @@
                     id="latitude"
                     type="number"
                     inputmode="decimal"
-                    value="31.2304"
+                    value=""
                     min="-90"
                     max="90"
                     step="any"
@@ -241,7 +248,7 @@
                     id="longitude"
                     type="number"
                     inputmode="decimal"
-                    value="121.4737"
+                    value=""
                     min="-180"
                     max="180"
                     step="any"
@@ -362,6 +369,23 @@
         </button>
       </div>
       <div id="mobileDeviceSlot"></div>
+      <section class="settings-section">
+        <div class="section-row"><h3>地图</h3><span class="subtle">无需 Key</span></div>
+        <label for="mapProvider">底图来源</label>
+        <select id="mapProvider"><option value="amap">高德道路地图（国内优先）</option><option value="osm">OpenStreetMap</option></select>
+        <p>启动时获取当前真实位置。定位失败时保留空坐标，可点击地图、搜索或手动填写。</p>
+        <p class="subtle">高德使用公开旧版瓦片入口，仍需联网；服务可用性取决于提供方。地图选点已转换为 GPS 坐标。</p>
+      </section>
+      <section class="settings-section" id="androidCompatibility" hidden>
+        <div class="section-row"><h3>Android 兼容性</h3><span class="subtle" id="androidVersion"></span></div>
+        <p id="androidChecks"></p>
+        <p id="androidGuidance"></p>
+        <div class="update-actions">
+          <button class="secondary" id="appSettings" type="button">权限与后台设置</button>
+          <button class="secondary" id="locationSettings" type="button">系统定位设置</button>
+        </div>
+        <p class="subtle">授权检查通过后仍需实际应用并核对定位。当前实机验证型号：Redmi K80；其他机型待验证。</p>
+      </section>
       <section class="settings-section">
         <div class="section-row">
           <h3><i data-lucide="palette"></i>外观</h3>

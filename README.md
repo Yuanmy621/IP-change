@@ -2,6 +2,16 @@
 
 在地图中选择位置，支持 **手机独立版** 和 **Mac + USB 版**。适合个人开发、地图功能调试和位置相关场景测试。
 
+开发中的 v1.2.0 将 Android 配置流程推广到标准 Android 9+ 手机，并新增独立 **iOS 实验版**。当前公开 Release 仍为 v1.1.0。Android 使用统一 APK，无需按 Redmi、三星或其他品牌分别打包；只有 Redmi K80 完成过本项目实机验证。
+
+| 平台 | 实现与验证状态 |
+| --- | --- |
+| Android 9+ | 原生前台服务 + 标准模拟位置接口；安装配置后可独立运行。新增精确权限、模拟位置应用、系统定位、通知和后台限制检查，以及通用设置入口。其他机型待验证。 |
+| iPhone 16 及更新机型 / iOS 27+ | 独立 SwiftUI 实验客户端，本机配对 + LocalDevVPN + 开发者定位服务。可构建未签名 IPA，但未完成 iPhone 实机验证；签名安装、开发者镜像准备及后台保持存在限制，尚不能保证全过程无需电脑。 |
+| Mac + Android / USB | 保留原有 ADB 控制方式；不依赖具体手机型号，受系统与厂商权限限制。 |
+
+iOS 源码、构建方式与验收清单见 [iOS 实验版说明](ios/README.md)。`./build-ios.sh` 输出 `dist/定点-iOS-实验版-未签名.ipa`，需要自行签名侧载，不能直接点击安装。普通 iOS App 或网页没有修改整机定位的公开接口；实验版通过开发调试服务实现，不是 App Store 版。当前没有对最新 iOS 的后续更新作兼容保证。
+
 **手机独立版：安装一次，之后通过链接打开。** 在 Android 手机上安装“定点”并将它选为模拟位置信息应用，之后可断开电脑，在手机中选点和恢复定位。原来的 Mac 版仍可使用，不需要在手机安装 App，但使用期间要保持电脑运行和 USB 连接。两种模式均无需 Root。仓库名称中的 `IP-change` 指这个项目，工具实际修改的是定位坐标，**不会改变网络出口 IP**。
 
 **下载 [v1.1.0 Release](https://github.com/Yuanmy621/IP-change/releases/tag/v1.1.0)**：Android 使用 `dingdian-1.1.0-android.apk`；Mac 使用 `dingdian-1.1.0-macos.zip`，包含两种芯片的程序、启动器和 ADB。文件摘要见 `SHA256SUMS.txt`，版本说明见 [CHANGELOG.md](CHANGELOG.md)。
@@ -20,7 +30,7 @@ Android 9 及以上可安装；目前提供个人测试用 APK。网页地图、
 
 当前私人入口：[手机打开定点](https://dingdian-mobile-yuanmy.ymy17360692646.chatgpt.site)，需要登录入口所有者的 ChatGPT 账号，该入口仍保留早期测试包，升级请使用上方最新 Release。手机独立版使用 `dingdian://open` 启动链接；静态入口页源码在 `docs/`。点击链接不会自动应用坐标，仍需在 App 中确认。也可将 `docs/` 入口页托管在自己的 HTTPS 网站；页面已链接到最新 Release，可下载安装包和启动应用。内置浏览器可能限制唤起，请使用手机系统浏览器。
 
-定位服务运行时显示持续通知。HyperOS 后台限制可能停止服务，可在应用电量设置中允许持续运行。进程被终止或手机重启后不会自动续用旧坐标；重新打开 App 后先处理待恢复会话。存在恢复记录时不要清除应用数据或卸载。切换 Mac 版与手机独立版前，应先恢复并退出当前版本。
+定位服务运行时显示持续通知。手机系统的后台限制可能停止服务，可在应用电量设置中允许持续运行。进程被终止或手机重启后不会自动续用旧坐标；重新打开 App 后先处理待恢复会话。存在恢复记录时不要清除应用数据或卸载。切换 Mac 版与手机独立版前，应先恢复并退出当前版本。
 
 手机独立版已在 Redmi K80（Android 16 / HyperOS 3.0）验证链接唤起、网页提交坐标、GPS / 网络测试源、切到后台后的持续刷新，以及恢复清理。系统会标记模拟位置，目标 App 是否采用这些坐标仍需实际核对。地图瓦片和地名搜索需要网络，手动输入坐标与位置控制可离线运行。手机独立版不开放网络控制端口，链接不能远程提交坐标。
 
@@ -45,7 +55,7 @@ Gradle Wrapper 自动下载固定版本的 Gradle，并校验下载摘要；首�
 发布新版本时：
 
 1. 在 `android/app/build.gradle` 更新 `versionName`（例如 `1.2.0`）与递增的 `versionCode`，并在 `CHANGELOG.md` 添加对应版本说明。
-2. 使用原构建电脑的签名密钥运行 `python3 scripts/prepare-release.py`；同时发布 Mac 版可加 `--with-mac`。脚本构建 APK，检查签名，输出到 `dist/release-版本号/`。
+2. 使用原构建电脑的签名密钥运行 `python3 scripts/prepare-release.py`；同时发布 Mac 版可加 `--with-mac`；仅在明确接受实验状态时用 `--with-ios` 附带未签名 IPA（见 iOS 说明）。脚本构建 APK，检查签名，输出到 `dist/release-版本号/`。
 3. 将源码改动提交并推送，用对应提交创建 GitHub Release（例如标签 `v1.2.0`），上传生成的 `dingdian-1.2.0-android.apk`、`update.json` 与 `SHA256SUMS.txt`；若打包了 Mac 版，再上传 ZIP。发布为正式版本并设为 Latest。
 4. 手机上点击“检查更新”即可发现新版本。草稿和预发布版本不会作为正常升级入口；不要只上传 APK 或只改标签。
 
@@ -174,7 +184,7 @@ IP-change/
 
 ### 首次连接手机
 
-1. 在手机设置中开启开发者选项，再开启 **USB 调试**。不同 HyperOS 版本的菜单名称可能不同，可在设置中搜索；一般 Android 配置可参考 [官方开发者选项说明](https://developer.android.com/studio/debug/dev-options)。
+1. 在手机设置中开启开发者选项，再开启 **USB 调试**。不同手机系统的菜单名称可能不同，可在设置中搜索；一般 Android 配置可参考 [官方开发者选项说明](https://developer.android.com/studio/debug/dev-options)。
 2. 开启手机的 **位置信息**，使用支持数据传输的 USB 线连接 Mac。
 3. 解锁手机，在 USB 调试授权提示中允许此电脑。
 4. 网页显示“已连接”后选择手机，点击 **“检查系统兼容性”**，阅读实际检查结果。
@@ -210,7 +220,11 @@ IP-change/
 
 ![地名搜索结果预览](preview-search.png)
 
-地图使用 Leaflet 和 OpenStreetMap。网络不可用时可继续手动填写坐标；地图瓦片无法加载并不代表手机连接失败。
+地图默认使用 Leaflet + 高德道路瓦片，无需填写 Key；在“设备与设置 → 地图”中可切换 OpenStreetMap。使用的是[阿里云旧版底图文档列出的高德瓦片入口](https://help.aliyun.com/en/datav/datav-6-0/user-guide/bottom-layer)，不是高德 JS SDK；接口仍需联网，提供方可能变更或停用，不能承诺所有网络都可访问。Android 原生网络层请求当前视野所需瓦片，按 HTTP 缓存头缓存，并保留错误提示和重试入口，不预下载城市或离线地图。
+
+Android 启动时在精确定位已授权、系统定位已开启且没有待恢复会话的情况下，请求手机当前真实位置；不通过 IP 推断，不使用固定上海坐标，不自动应用模拟定位。获取失败或权限未授权时坐标为空，可以点击地图、搜索、手动填写，或点击地图右侧“获取当前位置”重试。请求最长约 18 秒，只接受 15 秒内且未标记为模拟的定位结果；手动选择目标后，迟到的定位结果不会覆盖选择。模拟中应先恢复真实定位；GPS / 网络 / 融合定位源是否能产生新结果依赖设备及环境。Mac 页面只在点击按钮后获取**浏览器设备**位置，不将它当作 USB 手机的位置。
+
+高德底图按 GCJ-02 显示，GPS、搜索坐标、收藏和系统注入继续使用 WGS84；地图选点使用本地近似转换，并用迭代逆变换减小误差。OpenStreetMap 不做这项偏移。请勿将已是 GCJ-02 的坐标直接按 WGS84 填入。灰色底图不代表设备连接失败；可从设置切换底图或继续输入坐标。
 
 输入顺序是 **纬度在前，经度在后**：
 
@@ -220,7 +234,7 @@ IP-change/
 | 北京参考点 | `39.9042` | `116.4074` |
 | 广州参考点 | `23.1291` | `113.2644` |
 
-纬度范围为 `-90～90`，经度范围为 `-180～180`。工具按 **WGS84** 处理，不自动转换坐标系。高德的 GCJ-02 或百度的 BD-09 坐标需要先转换，否则可能出现偏移；城市快捷按钮只是参考点。
+纬度范围为 `-90～90`，经度范围为 `-180～180`。手动输入、搜索结果、收藏和系统注入均按 **WGS84** 处理；地图选点由所选底图坐标转换为 WGS84。手动粘贴高德 GCJ-02 或百度 BD-09 坐标时仍需要先转换，因为工具不会猜测输入的坐标系；城市快捷按钮只是参考点。
 
 点击目标旁的收藏按钮可保存当前坐标与名称，最多保留 8 个。在“收藏位置”抽屉中点击地点可选定坐标，点击该行的删除按钮可移除。收藏保存在当前浏览器的本地存储中，清理浏览器数据会移除收藏。
 
@@ -283,7 +297,7 @@ flowchart LR
 | 收藏坐标 | 浏览器 `localStorage`，供下次选点使用 |
 | 恢复记录 | `.runtime/session.json`，包含设备序列号、目标坐标、创建的定位源和原权限状态，用于异常恢复 |
 | 地名查询 | 提交的地名或地址发送给 Photon 兼容服务；结果在程序内存中缓存 30 分钟 |
-| 地图请求 | 浏览器向 OpenStreetMap 请求当前视野对应的地图瓦片 |
+| 地图请求 | Mac 浏览器或 Android 原生网络层向选定的高德 / OpenStreetMap 请求当前视野对应的瓦片；Android 按 HTTP 缓存头缓存 |
 
 默认不在终端打印带凭证的完整 URL。不要分享完整会话地址，也不要在待恢复时移动或清空恢复记录。`.runtime/`、构建产物和下载的 `platform-tools/` 已被 Git 忽略。
 
@@ -328,7 +342,7 @@ npm run build:ui
 npm run preview
 ```
 
-打开 `http://127.0.0.1:18766/` 预览 Mac 模式，`http://127.0.0.1:18766/?mode=phone` 预览手机原生桥接模式，再使用浏览器设备尺寸查看手机排版。地名搜索通过 Photon 联网查询，坐标在本地解析；设备与定位操作为模拟，会话仅保存在预览进程内，收藏和主题使用这个预览站点的本地存储。验证真实设备仍需运行正式程序或安装 APK。
+打开 `http://127.0.0.1:18766/` 预览 Mac 模式，`http://127.0.0.1:18766/?mode=phone` 预览手机原生桥接模式，再使用浏览器设备尺寸查看手机排版。地名搜索通过 Photon 联网查询，坐标在本地解析；设备、当前位置（固定预览坐标）与定位操作为模拟，会话仅保存在预览进程内，收藏和主题使用这个预览站点的本地存储。可用 `/?mode=phone&location=error` 验证获取失败时坐标为空，`/?mode=phone&location=slow` 验证迟到的结果不会覆盖手动选择，`/?mode=phone&map=error` 验证底图错误提示与重试。验证真实设备仍需运行正式程序或安装 APK。
 
 ### 命令行参数
 
@@ -380,7 +394,8 @@ Apple 芯片示例（Intel Mac 将程序名替换为 `定点-Intel芯片`）：
 - [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools)：ADB 官方下载与发布说明；下载包中的第三方声明见 `platform-tools/NOTICE.txt`。
 - [Android 测试定位命令源码](https://android.googlesource.com/platform/frameworks/base/+/android16-release/services/core/java/com/android/server/location/LocationShellCommand.java)：测试定位接口参考，设备实际支持情况以系统提供的命令为准。
 - [Leaflet 1.9.4](https://leafletjs.com/download.html)：地图交互组件，许可证见 [Leaflet-LICENSE](web/vendor/Leaflet-LICENSE)。
-- [OpenStreetMap](https://www.openstreetmap.org/copyright)：地图数据与瓦片，页面保留地图署名。
+- [高德旧版道路瓦片入口](https://help.aliyun.com/en/datav/datav-6-0/user-guide/bottom-layer)：默认底图，无需 Key，页面保留高德署名；提供方可更改或停用接口。
+- [OpenStreetMap](https://www.openstreetmap.org/copyright)：可选地图数据与瓦片，页面保留地图署名。
 
 - [Web Awesome 3.14.0](https://github.com/shoelace-style/webawesome)：免费版 Dialog、Drawer、Details；MIT 许可证见 [WebAwesome-LICENSE](web/vendor/WebAwesome-LICENSE)。
 - [Lucide 1.55.0](https://github.com/lucide-icons/lucide)：SVG 图标；ISC 许可证见 [Lucide-LICENSE](web/vendor/Lucide-LICENSE)。

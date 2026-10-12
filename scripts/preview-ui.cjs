@@ -16,8 +16,13 @@ function updateStatus() {
   return { state: updateState, currentVersion: "1.1.0", currentCode: 3, latestVersion: "1.2.0", hasUpdate: updateState !== "idle", size: 2000000, downloaded, canInstall: true, notes: "界面预览用的模拟版本。\n此操作不会连接 GitHub 下载或安装 APK。" };
 }
 const devices = [
-  { serial: "preview-device", model: "Redmi K80 · 界面预览", state: "device" },
+  { serial: "preview-device", model: "Android 手机 · 界面预览", state: "device" },
 ];
+const compatibility = {
+  platform: "android", manufacturer: "模拟设备", model: "Android 手机", android: "16", sdk: 36,
+  precise_location: true, mock_app: true, location_enabled: true, notifications: true, battery_unrestricted: false,
+  guidance: "界面预览：授权结果为模拟。若切后台后停止刷新，可从权限与后台设置中检查电量限制。",
+};
 function dispatch(endpoint, data = {}) {
   switch (endpoint) {
     case "status":
@@ -26,19 +31,24 @@ function dispatch(endpoint, data = {}) {
         preview: true,
         ready: true,
         setup: "预览设备已就绪；此预览不会修改手机定位。",
+        compatibility,
         active: !!session,
         session,
         last_refresh: new Date().toISOString(),
       };
     case "probe":
       return {
-        model: "Redmi K80 · 界面预览",
+        model: "Android 手机 · 界面预览",
         android: "16",
         hyperos: "HyperOS 3.0",
         interface: "预览连接正常，不操作真实设备。",
       };
     case "places/search":
       return searchPlaces(data.query);
+    case "location/current":
+      if (session) throw new Error("请先恢复真实定位。");
+      if (data.fail || process.env.DINGDIAN_PREVIEW_LOCATION === "error") throw new Error("预览：当前位置获取失败，可手动选点。");
+      return new Promise(resolve => setTimeout(() => resolve({latitude:39.9042,longitude:116.4074,accuracy:12,source:"preview"}), data.delay ? 1500 : 0));
     case "location/set": {
       const coordinate = parseCoordinates(`${data.latitude},${data.longitude}`);
       if (!coordinate) throw new Error("请输入有效坐标。");
@@ -57,6 +67,8 @@ function dispatch(endpoint, data = {}) {
       appearance = data.dark ? "dark" : "light";
       return { ok: true };
     case "settings/mock":
+    case "settings/app":
+    case "settings/location":
       return { ok: true };
     case "updates/status": return updateStatus();
     case "updates/check": updateState = "available"; return updateStatus();
@@ -76,7 +88,7 @@ http
       const url = new URL(request.url, `http://127.0.0.1:${port}`);
       response.setHeader(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self'; frame-ancestors 'none'; object-src 'none'",
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org https://webst02.is.autonavi.com; connect-src 'self'; frame-ancestors 'none'; object-src 'none'",
       );
       response.setHeader("Cache-Control", "no-store");
       if (url.pathname.startsWith("/api/")) {
@@ -93,10 +105,16 @@ http
         );
         return;
       }
+      // Deterministic network-failure fixture; never contacts a device or tile service.
+      if (/^\/preview-map-error\/[0-9]+\/[0-9]+\/[0-9]+\.png$/.test(url.pathname)) {
+        response.writeHead(503, {"Content-Type": "text/plain"});
+        response.end("Preview map network failure");
+        return;
+      }
       if (url.pathname === "/preview-native.js") {
         response.setHeader("Content-Type", "application/javascript");
         response.end(
-          `window.DingDianNative={request(id,endpoint,payload){fetch('/api/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:payload}).then(response=>response.json()).then(result=>NativeLocation.complete(id,result.error?result:{value:result})).catch(error=>NativeLocation.complete(id,{error:error.message}));}};`,
+          `window.DingDianNative={preview:true,mapTileTemplate:${JSON.stringify(url.searchParams.get("map") === "error" ? "/preview-map-error/{z}/{x}/{y}.png" : null)},request(id,endpoint,payload){if(endpoint==='location/current')payload=JSON.stringify({...JSON.parse(payload),fail:${url.searchParams.get("location") === "error"},delay:${url.searchParams.get("location") === "slow"}});fetch('/api/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:payload}).then(response=>response.json()).then(result=>NativeLocation.complete(id,result.error?result:{value:result})).catch(error=>NativeLocation.complete(id,{error:error.message}));}};`,
         );
         return;
       }
@@ -115,7 +133,7 @@ http
           .toString()
           .replace(
             '<script defer src="/native-bridge.js">',
-            '<script defer src="/preview-native.js"></script><script defer src="/native-bridge.js">',
+            `<script defer src="/preview-native.js?map=${url.searchParams.get('map') === 'error' ? 'error' : ''}&location=${['error','slow'].includes(url.searchParams.get('location')) ? url.searchParams.get('location') : ''}"></script><script defer src="/native-bridge.js">`,
           );
       response.setHeader(
         "Content-Type",

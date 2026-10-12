@@ -1,15 +1,16 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>定点 · 安装说明</title><style>body{margin:0;padding:32px 22px;background:#f5f5ef;color:#252d25;font:15px/1.9 system-ui,sans-serif}main{max-width:600px;margin:auto}h1{font-size:28px}h2{font-size:19px;margin-top:30px}a{color:#425634}li{margin-bottom:10px}ol{padding-left:22px}.note{color:#67755d}</style></head><body><main>
-<a href="./">← 返回打开入口</a><h1>在 Redmi K80 上使用定点</h1>
+<a href="./">← 返回打开入口</a><h1>在 Android 手机上使用定点</h1>
+<p>Android 9 及以上，使用统一 APK。Redmi K80 已验证；其他品牌和系统版本需要核对实际效果。HarmonyOS NEXT 等不能安装 Android APK 的系统不适用。</p>
 <h2>首次配置</h2><ol>
 <li>如果仍在使用 Mac 版，先连接原电脑，在 Mac 页面恢复真实定位并退出工具。两个版本不能同时控制定位。</li>
 <li><a href="https://github.com/Yuanmy621/IP-change/releases/latest">下载 APK</a>。按手机提示允许当前浏览器安装应用，并完成安装。之后可以关闭该安装权限。</li>
 <li>打开“定点”，允许精确位置信息和通知，并开启手机的位置信息开关。</li>
-<li>如果尚未开启开发者选项，在手机“关于手机”中找到并连续点击系统版本，按提示启用。不同 HyperOS 版本的名称可能不同。</li>
+<li>如果尚未开启开发者选项，在手机“关于手机”中找到版本号并按厂商提示启用。不同系统可能称为版本号、系统版本或软件信息，以本机设置为准。</li>
 <li>点击定点页面上的“选择模拟位置应用”，在开发者选项中找到“选择模拟位置信息应用”，选择“定点”。返回页面，确认显示已完成授权。</li>
 </ol>
 <h2>以后怎么用</h2><ol><li>用系统浏览器打开入口链接，点击“打开手机定位工具”。浏览器可能要求确认打开应用。</li><li>在地图上选择位置，或搜索地名、经纬度，再点击“应用位置”。如需同时模拟网络定位，在应用前勾选该项。</li><li>定点通过通知栏中的服务持续刷新位置。可切换到其他 App；目标 App 的缓存与模拟位置识别仍会影响实际效果。</li><li>结束后在页面或通知栏点击“恢复真实定位”。真实坐标出现可能需要等待系统下一次定位。</li></ol>
-<h2>遇到问题</h2><p>链接没有打开应用时，确认已安装，然后改用系统浏览器或直接打开桌面的定点。选择模拟位置应用后仍不能应用时，确认精确定位权限和手机定位开关。HyperOS 后台限制导致服务停止时，可在应用电量设置中允许定点持续运行。</p>
+<h2>遇到问题</h2><p>链接没有打开应用时，确认已安装，然后改用系统浏览器或直接打开桌面的定点。选择模拟位置应用后仍不能应用时，确认精确定位权限和手机定位开关。手机系统后台限制导致服务停止时，可在应用电量设置中允许定点持续运行。</p>
 <p>强行停止、系统杀进程或重启后，定点不会自动续用旧坐标；重新打开后先处理待恢复会话。存在待恢复记录时不要清除应用数据或卸载，保留记录以便恢复。</p>
 <p class="note">此安装包为个人测试版，Android 9 及以上可安装，实际定位效果需要在你的设备上核对。系统会标记模拟位置。工具改变的是 GPS / 网络定位坐标，不会改变网络出口 IP。</p>
 <p><a href="https://github.com/Yuanmy621/IP-change">项目源码 ↗</a></p>

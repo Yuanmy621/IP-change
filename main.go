@@ -316,7 +316,7 @@ func (c *controller) set(p position) error {
 			return e
 		}
 		if actual != "allow" {
-			return errors.New("系统未允许 ADB 模拟定位权限，当前 HyperOS 可能限制了该功能")
+			return errors.New("系统未允许 ADB 模拟定位权限，当前系统或厂商可能限制了该功能")
 		}
 		for _, provider := range providers {
 			// Record intent before creating a provider, so interruption remains recoverable.
@@ -459,7 +459,7 @@ func handler(c *controller, host, token string, stop func()) http.Handler {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org https://webst02.is.autonavi.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
 		if r.Host != host {
 			respond(w, 403, map[string]string{"error": "仅允许本机访问"})
 			return

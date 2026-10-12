@@ -1,15 +1,19 @@
 package com.yuanmy.dingdian;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.Criteria;
 import android.location.LocationManager;
 import android.location.provider.ProviderProperties;
 import android.os.Build;
 import android.os.Process;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -62,11 +66,25 @@ final class LocationController {
         if (!locations.isLocationEnabled()) return "请在手机设置中开启位置信息。";
         return "已完成授权。手机可独立运行，无需电脑或数据线。";
     }
+    JSONObject compatibility() throws Exception {
+        boolean unrestricted = context.getSystemService(PowerManager.class).isIgnoringBatteryOptimizations(context.getPackageName());
+        boolean notifications = context.getSystemService(NotificationManager.class).areNotificationsEnabled();
+        return new JSONObject().put("platform", "android").put("manufacturer", Build.MANUFACTURER)
+            .put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("sdk", Build.VERSION.SDK_INT)
+            .put("precise_location", hasLocationPermission()).put("mock_app", isMockApp())
+            .put("location_enabled", locations.isLocationEnabled()).put("notifications", notifications)
+            .put("battery_unrestricted", unrestricted)
+            .put("provider_api", Build.VERSION.SDK_INT >= 31 ? "Android 12+" : "Android 9–11")
+            .put("guidance", "适用于支持标准模拟位置接口的 Android 9+ 手机。开发者选项中搜索「模拟位置」，选择定点。"
+                + (!notifications ? "通知未开启，请在应用设置中开启，以便从通知栏恢复。" : "")
+                + (!unrestricted ? "若切后台后停止刷新，请在应用电量设置中允许后台运行；部分厂商还需手动允许自启动。" : ""));
+    }
     synchronized JSONObject status() throws Exception {
         JSONObject result = new JSONObject();
         result.put("devices", new JSONArray().put(new JSONObject().put("serial", "local").put("model", Build.MODEL).put("state", "device")));
         result.put("ready", !corrupt && hasLocationPermission() && isMockApp() && locations.isLocationEnabled());
         result.put("setup", setup()); result.put("active", active); result.put("error", error); result.put("last_refresh", lastRefresh);
+        result.put("compatibility", compatibility());
         result.put("session", providers.isEmpty() && !corrupt ? JSONObject.NULL : session());
         return result;
     }
@@ -108,7 +126,7 @@ final class LocationController {
                         .setPowerUsage(ProviderProperties.POWER_USAGE_LOW).setAccuracy(ProviderProperties.ACCURACY_FINE).build();
                     locations.addTestProvider(provider, properties);
                 } else {
-                    locations.addTestProvider(provider, provider.equals("network"), provider.equals("gps"), false, false, true, true, true, ProviderProperties.POWER_USAGE_LOW, ProviderProperties.ACCURACY_FINE);
+                    addLegacyProvider(provider);
                 }
                 locations.setTestProviderEnabled(provider, true);
             }
@@ -117,6 +135,13 @@ final class LocationController {
             try { restore(); } catch (Exception cleanup) { error = "恢复未完成：" + cleanup.getMessage(); }
             throw new IllegalStateException(failure.getMessage() + (error.isEmpty() ? "" : "；" + error), failure);
         }
+    }
+    @SuppressLint("WrongConstant")
+    private void addLegacyProvider(String provider) {
+        // SDK 31+ annotates this old overload with ProviderProperties constants.
+        // Criteria's public pre-31 constants have the same integer values (1).
+        locations.addTestProvider(provider, provider.equals("network"), provider.equals("gps"), false, false,
+            true, true, true, Criteria.POWER_LOW, Criteria.ACCURACY_FINE);
     }
     private void inject() {
         for (String provider : providers) {

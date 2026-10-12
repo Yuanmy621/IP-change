@@ -6,8 +6,8 @@ android {
         applicationId 'com.yuanmy.dingdian'
         minSdk 28
         targetSdk 36
-        versionCode 3
-        versionName '1.1.0'
+        versionCode 4
+        versionName '1.2.0'
         testInstrumentationRunner 'android.test.InstrumentationTestRunner'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }

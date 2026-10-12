@@ -483,6 +483,8 @@ kbd {
   background: var(--raised);
 }
 #map {
+  position: absolute;
+  inset: 0;
   height: 100%;
   width: 100%;
   background: var(--raised);
@@ -1756,4 +1758,32 @@ wa-details::part(content) {
     max-height: 100px;
     flex: none;
   }
+}
+
+/* Kept visible on phones when the regular click hint is hidden. */
+.map-notice {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 60px;
+  z-index: 600;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 2px 8px #0002;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.map-notice[hidden], .map-notice button[hidden] { display: none; }
+.map-notice button {
+  display: block;
+  margin-top: 8px;
+  padding: 5px 9px;
+  color: var(--text);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
 }

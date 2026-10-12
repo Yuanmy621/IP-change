@@ -4,6 +4,7 @@
   let sequence = 0;
   const pending = new Map();
   window.NativeLocation = {
+    mapTileTemplate: DingDianNative.preview ? DingDianNative.mapTileTemplate : "/map-tiles/{provider}/{z}/{x}/{y}.png",
     request(path, data) {
       return new Promise((resolve, reject) => {
         const id = String(++sequence);

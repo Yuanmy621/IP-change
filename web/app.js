@@ -23,6 +23,19 @@ if (onPhone) {
     "允许精确定位和通知，并开启手机定位。在开发者选项中将「定点」选为模拟位置信息应用。完成后可直接在手机操作。";
   $("restoreHelp").textContent =
     "手机前台服务每 2 秒刷新坐标。结束后从页面或通知栏恢复真实定位。进程被终止后，重新打开先处理待恢复会话。";
+  for (const [id, path] of [["appSettings", "settings/app"], ["locationSettings", "settings/location"]]) {
+    $(id).addEventListener("click", () => NativeLocation.request(path).catch((error) => notify(error.message, true)));
+  }
+}
+function renderCompatibility(info) {
+  $("androidCompatibility").hidden = !info || !onPhone;
+  if (!info || !onPhone) return;
+  $("androidVersion").textContent = `${info.manufacturer} ${info.model} · Android ${info.android}`;
+  $("androidChecks").textContent = [
+    ["精确定位", info.precise_location], ["模拟位置应用", info.mock_app],
+    ["系统定位", info.location_enabled], ["通知", info.notifications],
+  ].map(([label, enabled]) => `${label}：${enabled ? "已开启" : "未开启"}`).join(" · ");
+  $("androidGuidance").textContent = info.guidance;
 }
 let token = location.hash.slice(1);
 if (token) {
@@ -36,7 +49,13 @@ let busy = false,
   marker = null,
   previousError = "",
   lastDevice = "",
-  initialized = false;
+  initialized = false,
+  locationBusy = false,
+  defaultLocationRequested = false,
+  selectionRevision = 0;
+let mapProvider = "amap";
+try { if (localStorage.getItem("mapProvider") === "osm") mapProvider = "osm"; } catch (_) {}
+$("mapProvider").value = mapProvider;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 let cancelMapZoom = () => {},
   searchBusy = false;
@@ -83,6 +102,7 @@ function buttons() {
     !validCoordinate() ||
     (onPhone && !status?.ready);
   $("probe").disabled = busy || stopped || !connected;
+  $("currentLocation").disabled = locationBusy || stopped || !!status?.session;
   $("reset").disabled = busy || stopped || !status?.session;
   $("shutdown").disabled = busy || stopped;
   $("settingsShutdown").disabled = busy || stopped;
@@ -151,6 +171,7 @@ async function poll() {
       "ready",
       connected && (!onPhone || status.ready),
     );
+    renderCompatibility(status.compatibility);
     if (!connected) {
       $("deviceInfo").textContent =
         status.device_error ||
@@ -179,6 +200,10 @@ async function poll() {
     if (error && error !== previousError) notify(error, true);
     previousError = error;
     buttons();
+    if (onPhone && !defaultLocationRequested && !status.session && status.compatibility?.precise_location && status.compatibility?.location_enabled) {
+      defaultLocationRequested = true;
+      if (!validCoordinate() && selectionRevision === 0) requestCurrentLocation(true);
+    }
   } catch (error) {
     notify(
       error.message === "Failed to fetch"
@@ -215,7 +240,8 @@ function syncMap(pan = false) {
     lon = Number($("longitude").value);
   $("mapCoordinate").textContent = lat.toFixed(6) + ", " + lon.toFixed(6);
   if (map) {
-    const point = [lat, lon];
+    const display = mapProvider === "amap" ? CoordinateSystems.toGCJ(lat, lon) : {latitude:lat, longitude:lon};
+    const point = [display.latitude, display.longitude];
     if (!marker)
       marker = L.marker(point, {
         icon: L.divIcon({
@@ -248,6 +274,7 @@ function syncMap(pan = false) {
   buttons();
 }
 function choose(lat, lon, pan = true, name = "自定义位置") {
+  selectionRevision++;
   $("latitude").value = Number(lat).toFixed(6);
   $("longitude").value = Number(lon).toFixed(6);
   $("targetName").textContent = name;
@@ -259,34 +286,68 @@ if (window.L) {
     scrollWheelZoom: false,
     zoomSnap: 0,
     zoomDelta: 0.5,
-    minZoom: 2,
+    minZoom: mapProvider === "amap" ? 3 : 2,
     maxZoom: 19,
     zoomAnimation: !reducedMotion.matches,
     fadeAnimation: !reducedMotion.matches,
-  }).setView([31.2304, 121.4737], 12);
+  }).setView([35, 105], 4); // Overview only; no selected coordinate until a real fix or user choice.
   cancelMapZoom = MapTools.smoothWheelZoom(map, reducedMotion);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    updateWhenZooming: false,
-    keepBuffer: 2,
-    attribution:
-      '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
-  })
-    .addTo(map)
-    .on("tileerror", () => {
-      $("mapHint").lastElementChild.textContent =
-        "地图加载受网络影响；可直接输入经纬度";
+  let tiles, tileMonitor;
+  let mapNoticeRevision = 0;
+  function loadBaseMap() {
+    if (tiles) map.removeLayer(tiles);
+    const remote = mapProvider === "amap"
+      ? "https://webst02.is.autonavi.com/appmaptile?style=7&x={x}&y={y}&z={z}"
+      : "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+    const template = window.NativeLocation?.mapTileTemplate?.replace("{provider}", mapProvider) || remote;
+    tiles = L.tileLayer(template, {
+      maxZoom: 19, updateWhenZooming: false, keepBuffer: 2,
+      attribution: mapProvider === "amap"
+        ? '© <a href="https://www.amap.com/" target="_blank" rel="noopener noreferrer">高德地图</a>'
+        : '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
     });
-  map.on("click", (e) =>
-    choose(e.latlng.lat, e.latlng.wrap().lng, false, "地图选点"),
-  );
+    tileMonitor = MapLoading.watchTiles(tiles, (state) => {
+      const revision = ++mapNoticeRevision;
+      $("mapNotice").hidden = state === "ready";
+      $("retryMap").hidden = state !== "error";
+      $("mapHint").hidden = state !== "ready";
+      $("mapNoticeText").textContent = state === "error"
+        ? "道路底图加载失败，请重试或在设置中切换底图。仍可搜索或输入坐标。"
+        : "正在加载道路底图…";
+      if (state === "error" && window.NativeLocation?.mapTileTemplate && !status?.preview) {
+        NativeLocation.request("map/status").then((status) => {
+          if (revision === mapNoticeRevision && status.error)
+            $("mapNoticeText").textContent = status.error + " 可在设置中切换底图。";
+        }).catch(() => {});
+      }
+    });
+    tiles.addTo(map);
+  }
+  $("retryMap").addEventListener("click", () => tileMonitor.retry());
+  $("mapProvider").addEventListener("change", () => {
+    const center = map.getCenter();
+    const real = mapProvider === "amap" ? CoordinateSystems.toWGS(center.lat, center.lng) : {latitude:center.lat, longitude:center.lng};
+    mapProvider = $("mapProvider").value;
+    map.setMinZoom(mapProvider === "amap" ? 3 : 2);
+    try { localStorage.setItem("mapProvider", mapProvider); } catch (_) {}
+    const display = mapProvider === "amap" ? CoordinateSystems.toGCJ(real.latitude, real.longitude) : real;
+    map.setView([display.latitude, display.longitude], map.getZoom(), {animate:false});
+    loadBaseMap(); syncMap();
+  });
+  loadBaseMap();
+  map.on("click", (e) => {
+    const lat = e.latlng.lat, lon = e.latlng.wrap().lng;
+    const point = mapProvider === "amap" ? CoordinateSystems.toWGS(lat, lon) : {latitude:lat,longitude:lon};
+    choose(point.latitude, point.longitude, false, "地图选点");
+  });
   if (window.ResizeObserver)
     new ResizeObserver(() => map.invalidateSize({ pan: false })).observe(
       $("map"),
     );
-} else
-  $("mapHint").lastElementChild.textContent =
-    "地图组件未加载；请直接输入经纬度";
+} else {
+  $("mapNotice").hidden = false;
+  $("mapNoticeText").textContent = "地图组件未加载，请重新打开定点。仍可输入经纬度。";
+}
 function searchStatus(text, error = false) {
   $("searchStatus").textContent = text;
   $("searchStatus").classList.toggle("error", error);
@@ -353,9 +414,34 @@ $("searchForm").addEventListener("submit", async (event) => {
 });
 for (const id of ["latitude", "longitude"])
   $(id).addEventListener("input", () => {
+    selectionRevision++;
     $("targetName").textContent = "自定义位置";
     syncMap();
   });
+async function requestCurrentLocation(automatic = false) {
+  if (locationBusy || status?.session) return;
+  locationBusy = true;
+  const revision = selectionRevision;
+  buttons();
+  if (!validCoordinate()) $("targetName").textContent = "正在获取当前位置…";
+  try {
+    const point = onPhone ? await NativeLocation.request("location/current") : await new Promise((resolve, reject) => {
+      if (!navigator.geolocation) return reject(new Error("浏览器不支持定位，请手动选点。"));
+      navigator.geolocation.getCurrentPosition(
+        position => resolve({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy}),
+        () => reject(new Error("无法获取浏览器当前位置，请检查定位权限或手动选点。")),
+        {enableHighAccuracy:true,maximumAge:0,timeout:18000},
+      );
+    });
+    if (revision !== selectionRevision || status?.session) return;
+    choose(point.latitude, point.longitude, true, status?.preview ? "预览当前位置（模拟）" : onPhone ? "当前真实位置" : "浏览器当前位置");
+    notify(`${status?.preview ? "已读取预览坐标，非实机定位" : onPhone ? "已获取手机当前位置" : "已获取浏览器位置"}，精度约 ${Math.round(point.accuracy || 0)} 米。尚未启用模拟定位。`);
+  } catch (error) {
+    if (revision === selectionRevision && !validCoordinate()) $("targetName").textContent = "尚未获取当前位置";
+    if (!automatic || revision === selectionRevision) notify(error.message, true);
+  } finally { locationBusy = false; buttons(); }
+}
+$("currentLocation").addEventListener("click", () => requestCurrentLocation());
 $("centerMap").addEventListener("click", () => syncMap(true));
 document
   .querySelectorAll("[data-lat]")
@@ -374,6 +460,7 @@ $("probe").addEventListener("click", () =>
     $("deviceInfo").textContent = [
       info.model,
       "Android " + info.android,
+      info.manufacturer,
       info.hyperos,
     ]
       .filter(Boolean)

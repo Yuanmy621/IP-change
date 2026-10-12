@@ -34,6 +34,9 @@ public final class MainActivity extends Activity {
     private FrameLayout container;
     private LocationController controller;
     private AppUpdater updater;
+    private MapTiles mapTiles;
+    private CurrentLocation currentLocation;
+    private final ExecutorService locationWorker = Executors.newSingleThreadExecutor();
     private final PlaceSearch search = new PlaceSearch();
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private volatile boolean visible, destroyed;
@@ -42,6 +45,8 @@ public final class MainActivity extends Activity {
         super.onCreate(state);
         controller = ((DingDianApp) getApplication()).controller();
         updater = ((DingDianApp) getApplication()).updater();
+        mapTiles = new MapTiles(this);
+        currentLocation = new CurrentLocation(this, controller);
         web = new WebView(this); web.setBackgroundColor(Color.rgb(20, 20, 22));
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true);
@@ -53,12 +58,12 @@ public final class MainActivity extends Activity {
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 Uri url = request.getUrl();
                 if (!HOST.equals(url.getHost()) || !"https".equals(url.getScheme())) {
-                    if ("https".equals(url.getScheme()) && "tile.openstreetmap.org".equals(url.getHost())) return null;
                     return response(403, "Forbidden", "text/plain", new ByteArrayInputStream(new byte[0]));
                 }
                 String path = url.getPath();
                 if (path == null || path.equals("/")) path = "/index.html";
                 if (!"GET".equals(request.getMethod()) || path.contains("..")) return response(403, "Forbidden", "text/plain", new ByteArrayInputStream(new byte[0]));
+                if (path.startsWith("/map-tiles/")) return mapTiles.load(path);
                 try {
                     String mime = path.endsWith(".html") ? "text/html" : path.endsWith(".js") ? "application/javascript" : path.endsWith(".css") ? "text/css" : path.endsWith(".svg") ? "image/svg+xml" : path.endsWith(".png") ? "image/png" : "application/octet-stream";
                     return response(200, "OK", mime, getAssets().open(path.substring(1)));
@@ -87,7 +92,7 @@ public final class MainActivity extends Activity {
     }
     private WebResourceResponse response(int code, String reason, String mime, java.io.InputStream body) {
         Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'");
+        headers.put("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'");
         headers.put("X-Content-Type-Options", "nosniff");
         return new WebResourceResponse(mime, "UTF-8", code, reason, headers, body);
     }
@@ -98,7 +103,7 @@ public final class MainActivity extends Activity {
         if (!permissions.isEmpty()) requestPermissions(permissions.toArray(new String[0]), 10);
     }
     @Override protected void onResume() { super.onResume(); visible = true; }
-    @Override protected void onPause() { visible = false; super.onPause(); }
+    @Override protected void onPause() { visible = false; currentLocation.cancel(); mapTiles.flush(); super.onPause(); }
     private void ui(Runnable action) throws Exception {
         AtomicReference<Exception> failure = new AtomicReference<>(); CountDownLatch finished = new CountDownLatch(1);
         runOnUiThread(() -> { try { if (destroyed) throw new IllegalStateException("控制页已关闭，请重新打开。"); action.run(); } catch (Exception e) { failure.set(e); } finally { finished.countDown(); } });
@@ -127,6 +132,10 @@ public final class MainActivity extends Activity {
                     }
                 }); return ok;
             case "status": return controller.status();
+            case "map/status": return mapTiles.status();
+            case "location/current":
+                if (!visible) throw new IllegalStateException("请在定点页面获取当前位置。");
+                return currentLocation.read();
             case "updates/status": return updater.status();
             case "updates/check": updater.check(); return updater.status();
             case "updates/download":
@@ -138,9 +147,13 @@ public final class MainActivity extends Activity {
                     if (controller.pending()) throw new IllegalStateException("请先恢复真实定位，再安装更新。");
                     updater.install(this);
                 }); return updater.status();
-            case "probe": return new JSONObject().put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("hyperos", "手机独立版").put("interface", controller.setup());
+            case "probe": return controller.compatibility().put("interface", controller.setup());
             case "settings/mock":
-                ui(() -> { requestSetupPermissions(); startActivity(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)); }); return ok;
+                ui(() -> { requestSetupPermissions(); openSettings(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)); }); return ok;
+            case "settings/app":
+                ui(() -> { requestSetupPermissions(); openSettings(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))); }); return ok;
+            case "settings/location":
+                ui(() -> openSettings(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))); return ok;
             case "places/search": return search.search(data.getString("query"));
             case "location/set":
                 if (!visible) throw new IllegalStateException("请在定点页面中点击应用位置。");
@@ -155,10 +168,14 @@ public final class MainActivity extends Activity {
             default: throw new IllegalArgumentException("不支持的手机端操作。");
         }
     }
+    private void openSettings(Intent intent) {
+        try { startActivity(intent); }
+        catch (android.content.ActivityNotFoundException unavailable) { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
+    }
     private final class Bridge {
         @JavascriptInterface public void request(String id, String path, String payload) {
             if (destroyed || id == null || !id.matches("[0-9]{1,10}") || payload == null || payload.length() > 16384) return;
-            worker.execute(() -> {
+            ("location/current".equals(path) ? locationWorker : worker).execute(() -> {
                 JSONObject reply = new JSONObject();
                 try { reply.put("value", dispatch(path, new JSONObject(payload))); }
                 catch (Exception e) { try { reply.put("error", e.getMessage() == null ? "操作失败，请检查权限并重试。" : e.getMessage()); } catch (Exception ignored) {} }
@@ -168,6 +185,6 @@ public final class MainActivity extends Activity {
         }
     }
     @Override protected void onDestroy() {
-        destroyed = true; worker.shutdown(); web.removeJavascriptInterface("DingDianNative"); web.destroy(); super.onDestroy();
+        destroyed = true; currentLocation.cancel(); locationWorker.shutdownNow(); worker.shutdown(); web.removeJavascriptInterface("DingDianNative"); web.destroy(); super.onDestroy();
     }
 }
