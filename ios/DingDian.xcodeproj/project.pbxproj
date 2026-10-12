@@ -1,0 +1,42 @@
+// !$*UTF8*$!
+{ archiveVersion = 1; classes = {}; objectVersion = 56; objects = {
+95AF5FE5A2422F3B34B2CEC0 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/Core/DiagnosticLog.swift"; sourceTree = SOURCE_ROOT; };
+2888F50591B1692B4E44A20E = { isa = PBXBuildFile; fileRef = 95AF5FE5A2422F3B34B2CEC0; };
+0D640DAC409C035BC6EB8B3C = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/Core/LocalStore.swift"; sourceTree = SOURCE_ROOT; };
+C89308A40E29CA8E19AEA345 = { isa = PBXBuildFile; fileRef = 0D640DAC409C035BC6EB8B3C; };
+C3198A9005480BDCA62D1445 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/Core/LocationEngine.swift"; sourceTree = SOURCE_ROOT; };
+A3ECEA77F494CB5A0EFD3083 = { isa = PBXBuildFile; fileRef = C3198A9005480BDCA62D1445; };
+BAA9E05F74787B9E37A68237 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/Core/NetworkStatus.swift"; sourceTree = SOURCE_ROOT; };
+1151BCE668D7415AAF6C19DF = { isa = PBXBuildFile; fileRef = BAA9E05F74787B9E37A68237; };
+3BA5FA91CB335B7AEA059FDE = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/Core/PairableHostAdvertiser.swift"; sourceTree = SOURCE_ROOT; };
+93B4BA4271C09AEBDDBA569B = { isa = PBXBuildFile; fileRef = 3BA5FA91CB335B7AEA059FDE; };
+7373AFB73BDB1E0D2606D64D = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/Core/PairingService.swift"; sourceTree = SOURCE_ROOT; };
+6DE9CB941E808043E10C07AB = { isa = PBXBuildFile; fileRef = 7373AFB73BDB1E0D2606D64D; };
+00D117415A677988A55FBB54 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/Core/PairingStore.swift"; sourceTree = SOURCE_ROOT; };
+69D5475F03AF38E197A9A687 = { isa = PBXBuildFile; fileRef = 00D117415A677988A55FBB54; };
+C7AD36F7E5A82CA5B2563E18 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/DingDianApp.swift"; sourceTree = SOURCE_ROOT; };
+E203823DA6469E3B60C746E0 = { isa = PBXBuildFile; fileRef = C7AD36F7E5A82CA5B2563E18; };
+0B7FE945428DC2544C90B2F9 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/LocationModels.swift"; sourceTree = SOURCE_ROOT; };
+3D22A2CABE13C04BAEBD01CE = { isa = PBXBuildFile; fileRef = 0B7FE945428DC2544C90B2F9; };
+485D953C071CCA4351792F43 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/LocationState.swift"; sourceTree = SOURCE_ROOT; };
+4BF19ED06FF3D20637761E6C = { isa = PBXBuildFile; fileRef = 485D953C071CCA4351792F43; };
+2C2613F7CF3986273E4B5851 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DingDian/RecoveryJournal.swift"; sourceTree = SOURCE_ROOT; };
+2388397E5B94346C860EC457 = { isa = PBXBuildFile; fileRef = 2C2613F7CF3986273E4B5851; };
+CC1D3B0234846714B0AEDA6C = { isa = PBXFileReference; lastKnownFileType = text; path = "THIRD_PARTY_LICENSES.txt"; sourceTree = SOURCE_ROOT; };
+715503FC66ACB177FDB9B741 = { isa = PBXBuildFile; fileRef = CC1D3B0234846714B0AEDA6C; };
+A8792157CB4F27FB949C035F = { isa = PBXFileReference; explicitFileType = wrapper.application; path = DingDian.app; sourceTree = BUILT_PRODUCTS_DIR; };
+B79606FB3AFEA5BD1609ED40 = { isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = SOURCE_ROOT; };
+0A3E27B8CA818264D75C8D81 = { isa = PBXGroup; name = Products; children = (A8792157CB4F27FB949C035F,); sourceTree = "<group>"; };
+4813494D137E1631BBA301D5 = { isa = PBXGroup; children = (95AF5FE5A2422F3B34B2CEC0,0D640DAC409C035BC6EB8B3C,C3198A9005480BDCA62D1445,BAA9E05F74787B9E37A68237,3BA5FA91CB335B7AEA059FDE,7373AFB73BDB1E0D2606D64D,00D117415A677988A55FBB54,C7AD36F7E5A82CA5B2563E18,0B7FE945428DC2544C90B2F9,485D953C071CCA4351792F43,2C2613F7CF3986273E4B5851,CC1D3B0234846714B0AEDA6C,B79606FB3AFEA5BD1609ED40,0A3E27B8CA818264D75C8D81,); sourceTree = "<group>"; };
+878A52FC5FF6A57D50B7B870 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (2888F50591B1692B4E44A20E,C89308A40E29CA8E19AEA345,A3ECEA77F494CB5A0EFD3083,1151BCE668D7415AAF6C19DF,93B4BA4271C09AEBDDBA569B,6DE9CB941E808043E10C07AB,69D5475F03AF38E197A9A687,E203823DA6469E3B60C746E0,3D22A2CABE13C04BAEBD01CE,4BF19ED06FF3D20637761E6C,2388397E5B94346C860EC457,); runOnlyForDeploymentPostprocessing = 0; };
+41D311A605520FC7B8B9A980 = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (715503FC66ACB177FDB9B741,); runOnlyForDeploymentPostprocessing = 0; };
+E2AA269EB967A8853A258BFA = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+2B23A31EEC75B029432F2445 = { isa = XCBuildConfiguration; name = Debug; buildSettings = { SDKROOT = iphoneos; SWIFT_VERSION = 5.0; IPHONEOS_DEPLOYMENT_TARGET = 18.0; CLANG_ENABLE_MODULES = YES; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; };
+AA9B1D3BE1353EBD76471D11 = { isa = XCBuildConfiguration; name = Debug; baseConfigurationReference = B79606FB3AFEA5BD1609ED40; buildSettings = { PRODUCT_NAME = "DingDian"; PRODUCT_BUNDLE_IDENTIFIER = "com.yuanmy.dingdian.ios"; MARKETING_VERSION = "1.2.0"; CURRENT_PROJECT_VERSION = "4"; CODE_SIGN_STYLE = "Automatic"; GENERATE_INFOPLIST_FILE = "NO"; INFOPLIST_FILE = "DingDian/Info.plist"; TARGETED_DEVICE_FAMILY = "1"; SUPPORTED_PLATFORMS = "iphoneos"; SUPPORTS_MACCATALYST = "NO"; SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/Vendor/idevice"; LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/idevice"; OTHER_LDFLAGS = "$(inherited) -lidevice_ffi -lc++ -lz -liconv -lresolv -framework Security -framework SystemConfiguration"; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks"; }; };
+07CA1E69F6068DEA30A4DA6B = { isa = XCBuildConfiguration; name = Release; buildSettings = { SDKROOT = iphoneos; SWIFT_VERSION = 5.0; IPHONEOS_DEPLOYMENT_TARGET = 18.0; CLANG_ENABLE_MODULES = YES; SWIFT_OPTIMIZATION_LEVEL = "-O"; }; };
+1E2E67F111F111E446D58E6C = { isa = XCBuildConfiguration; name = Release; baseConfigurationReference = B79606FB3AFEA5BD1609ED40; buildSettings = { PRODUCT_NAME = "DingDian"; PRODUCT_BUNDLE_IDENTIFIER = "com.yuanmy.dingdian.ios"; MARKETING_VERSION = "1.2.0"; CURRENT_PROJECT_VERSION = "4"; CODE_SIGN_STYLE = "Automatic"; GENERATE_INFOPLIST_FILE = "NO"; INFOPLIST_FILE = "DingDian/Info.plist"; TARGETED_DEVICE_FAMILY = "1"; SUPPORTED_PLATFORMS = "iphoneos"; SUPPORTS_MACCATALYST = "NO"; SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/Vendor/idevice"; LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/idevice"; OTHER_LDFLAGS = "$(inherited) -lidevice_ffi -lc++ -lz -liconv -lresolv -framework Security -framework SystemConfiguration"; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks"; }; };
+B4E10CAA9C5E22150B71559C = { isa = XCConfigurationList; buildConfigurations = (2B23A31EEC75B029432F2445,07CA1E69F6068DEA30A4DA6B,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+7BCEE9A04133D8A2FED7D4D3 = { isa = XCConfigurationList; buildConfigurations = (AA9B1D3BE1353EBD76471D11,1E2E67F111F111E446D58E6C,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+A172CEDCAE47474B615C54D5 = { isa = PBXNativeTarget; buildConfigurationList = 7BCEE9A04133D8A2FED7D4D3; buildPhases = (878A52FC5FF6A57D50B7B870,E2AA269EB967A8853A258BFA,41D311A605520FC7B8B9A980,); buildRules = (); dependencies = (); name = DingDian; productName = DingDian; productReference = A8792157CB4F27FB949C035F; productType = "com.apple.product-type.application"; };
+244210E48437B6556980A702 = { isa = PBXProject; attributes = { LastUpgradeCheck = 2660; }; buildConfigurationList = B4E10CAA9C5E22150B71559C; compatibilityVersion = "Xcode 14.0"; developmentRegion = "zh-Hans"; knownRegions = ("zh-Hans",en,Base); mainGroup = 4813494D137E1631BBA301D5; productRefGroup = 0A3E27B8CA818264D75C8D81; projectDirPath = ""; projectRoot = ""; targets = (A172CEDCAE47474B615C54D5,); };
+}; rootObject = 244210E48437B6556980A702; }

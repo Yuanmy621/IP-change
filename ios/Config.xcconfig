@@ -1,0 +1,2 @@
+// Optional personal signing settings; never commit credentials or a provisioning profile.
+#include? "Signing.xcconfig"

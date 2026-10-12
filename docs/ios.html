@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>定点 · iOS 实验版</title>
+<style>body{margin:0;padding:32px 22px;background:#141416;color:#e5e5e9;font:15px/1.9 system-ui,sans-serif}main{max-width:640px;margin:auto}h1{font-size:28px}h2{font-size:19px;margin-top:30px}a{color:#b0a5ff}.note{padding:16px;border:1px solid #3c3c42;border-radius:12px;color:#b6b6bf}li{margin-bottom:10px}ol{padding-left:22px}</style></head><body><main>
+<a href="./">← 返回入口</a><h1>定点 iOS · 实验版</h1>
+<p class="note">面向 iPhone 16 及后续机型、iOS 27+。目前只完成代码与构建检查，没有完成 iPhone 实机验证，不能承诺首次配置及运行全过程无需电脑。当前 v1.1.0 Release 不包含 iOS 安装包。</p>
+<h2>安装和运行条件</h2><ol>
+<li>从项目源码构建未签名 IPA，需要自行签名侧载。未签名文件无法直接点击安装，链接也不会自动安装。</li>
+<li>启用开发者模式，允许本地网络和通知，连接 Wi-Fi，并安装、连接 <a href="https://github.com/jkcoxson/LocalDevVPN">LocalDevVPN</a>。</li>
+<li>在定点的设备设置中开始本机配对，再在系统开发者模式的 Pair with Host 中选择“定点 iOS”，按提示输入验证码。</li>
+<li>选择或搜索位置，再点击应用。结束时点击恢复真实定位，并在 Apple 地图核对结果。</li>
+</ol>
+<p>若开发者定位服务不可用，当前版本可能仍需电脑准备设备；蜂窝、其他 VPN 共存与长期后台保持均未验证。当前实现通过开发调试服务发送模拟位置，并不提供普通 iOS App 修改系统定位的公开权限。</p>
+<h2>已安装后打开</h2><p><a href="dingdian-ios://open">打开定点 iOS 控制页 ↗</a></p><p>此链接只打开已签名安装的实验版，不会自动应用或恢复坐标。普通浏览器无法直接修改整机定位。</p>
+<h2>更新</h2><p>iOS 更新需要下载新 IPA，使用相同签名与应用标识覆盖安装；Android 的 APK 更新流程不适用于 iOS。更新前先恢复真实定位。</p>
+<p><a href="https://github.com/Yuanmy621/IP-change/tree/main/ios">源码、构建和完整验收清单 ↗</a>（此页面与 iOS 源码目前为本地开发改动，提交发布后该地址才可访问。）</p>
+</main></body></html>

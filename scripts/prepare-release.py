@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import plistlib
 from pathlib import Path
 import re
 import shutil
@@ -27,7 +28,7 @@ def notes_for(version):
     return match.group(1).strip()
 
 
-def prepare(skip_build=False, with_mac=False):
+def prepare(skip_build=False, with_mac=False, with_ios=False):
     if not skip_build:
         run("./build-android.sh")
     sdk = Path(os.environ.get("ANDROID_SDK_ROOT") or os.environ.get("ANDROID_HOME") or ROOT / ".tools/android-sdk")
@@ -80,6 +81,20 @@ def prepare(skip_build=False, with_mac=False):
                 if file.is_file():
                     bundle.write(file, file.relative_to(output))
         assets.append(archive)
+    if with_ios:
+        if not skip_build:
+            run("./build-ios.sh")
+        ipa = ROOT / "dist/定点-iOS-实验版-未签名.ipa"
+        with zipfile.ZipFile(ipa) as bundle:
+            ios_info = plistlib.loads(bundle.read("Payload/DingDian.app/Info.plist"))
+        if (ios_info.get("CFBundleIdentifier") != "com.yuanmy.dingdian.ios"
+                or ios_info.get("CFBundleShortVersionString") != version
+                or ios_info.get("CFBundleVersion") != package[2]):
+            raise ValueError("iOS 实验包的应用标识、版本或构建号不匹配，请重新构建")
+        ios_filename = f"dingdian-{version}-ios-experimental-unsigned.ipa"
+        shutil.copy2(ipa, output / ios_filename)
+        assets.append(ios_filename)
+        print("iOS 包为未签名实验版，需自行签名侧载；未完成真机验收，不能承诺全过程无需电脑。")
     (output / "SHA256SUMS.txt").write_text("".join(
         f"{hashlib.sha256((output / name).read_bytes()).hexdigest()}  {name}\n" for name in assets))
     # Keep release notes separate; only the files listed below are download assets.
@@ -93,5 +108,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skip-build", action="store_true", help="复用已构建的 APK；仍验证签名")
     parser.add_argument("--with-mac", action="store_true", help="同时构建并打包 Mac 版（需要 Go 与 platform-tools）")
+    parser.add_argument("--with-ios", action="store_true", help="附带未签名 iOS 实验 IPA（需要 Xcode；不代表实机适配完成）")
     args = parser.parse_args()
-    prepare(args.skip_build, args.with_mac)
+    prepare(args.skip_build, args.with_mac, args.with_ios)
