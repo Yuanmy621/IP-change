@@ -6,7 +6,7 @@
 
 ## 构建和签名
 
-在项目根目录执行 `./build-ios.sh`。脚本校验固定版本的原生依赖，使用 Xcode 生成 `dist/定点-iOS-实验版-未签名.ipa`。未签名 IPA 不能直接点击安装，也未发布到当前 v1.1.0 Release。
+在项目根目录执行 `./build-ios.sh`。脚本校验固定版本的原生依赖，使用 Xcode 生成 `dist/定点-iOS-实验版-未签名.ipa`。v1.2.0 Release 附带未签名实验 IPA，不能直接点击安装，仍需自行签名侧载。
 
 在 Xcode 打开 `ios/DingDian.xcodeproj`，选自己的 Development Team 和签名设置；或用已有合法的侧载签名工具签名。个人 Team 可写入被 Git 忽略的 `ios/Signing.xcconfig`：
 

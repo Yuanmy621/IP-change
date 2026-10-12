@@ -2,7 +2,7 @@
 
 在地图中选择位置，支持 **手机独立版** 和 **Mac + USB 版**。适合个人开发、地图功能调试和位置相关场景测试。
 
-开发中的 v1.2.0 将 Android 配置流程推广到标准 Android 9+ 手机，并新增独立 **iOS 实验版**。当前公开 Release 仍为 v1.1.0。Android 使用统一 APK，无需按 Redmi、三星或其他品牌分别打包；只有 Redmi K80 完成过本项目实机验证。
+v1.2.0 将 Android 配置流程推广到标准 Android 9+ 手机，并新增独立 **iOS 实验版**。Android 使用统一 APK，无需按 Redmi、三星或其他品牌分别打包；只有 Redmi K80 完成过本项目实机验证。
 
 | 平台 | 实现与验证状态 |
 | --- | --- |
@@ -14,7 +14,7 @@ iOS 源码、构建方式与验收清单见 [iOS 实验版说明](ios/README.md)
 
 **手机独立版：安装一次，之后通过链接打开。** 在 Android 手机上安装“定点”并将它选为模拟位置信息应用，之后可断开电脑，在手机中选点和恢复定位。原来的 Mac 版仍可使用，不需要在手机安装 App，但使用期间要保持电脑运行和 USB 连接。两种模式均无需 Root。仓库名称中的 `IP-change` 指这个项目，工具实际修改的是定位坐标，**不会改变网络出口 IP**。
 
-**下载 [v1.1.0 Release](https://github.com/Yuanmy621/IP-change/releases/tag/v1.1.0)**：Android 使用 `dingdian-1.1.0-android.apk`；Mac 使用 `dingdian-1.1.0-macos.zip`，包含两种芯片的程序、启动器和 ADB。文件摘要见 `SHA256SUMS.txt`，版本说明见 [CHANGELOG.md](CHANGELOG.md)。
+**下载 [v1.2.0 Release](https://github.com/Yuanmy621/IP-change/releases/tag/v1.2.0)**：Android 使用 `dingdian-1.2.0-android.apk`；Mac 使用 `dingdian-1.2.0-macos.zip`，包含两种芯片的程序、启动器和 ADB；iOS 提供 `dingdian-1.2.0-ios-experimental-unsigned.ipa`，需自行签名侧载且尚未实机验证。文件摘要见 `SHA256SUMS.txt`，版本说明见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 手机独立版
 
@@ -88,7 +88,7 @@ adb shell am instrument -w -e exerciseMock true \
 
 搜索支持地名、地址和坐标，桌面可按 `⌘K` / `Ctrl+K` 聚焦搜索框。收藏通过抽屉管理，并提供独立删除按钮。手机展开底部面板后可选择快捷城市及网络定位源，应用和恢复按钮保留在操作区。
 
-以下为开发版界面预览（使用模拟设备），尚未发布到 v1.0.0 Release。设计参考、组件选型和维护方式见 [界面设计说明](docs/UI_DESIGN.md)。
+以下为界面预览（使用模拟设备）。设计参考、组件选型和维护方式见 [界面设计说明](docs/UI_DESIGN.md)。
 
 ![Linear 深色桌面工作台](docs/images/desktop-dark.jpg)
 
