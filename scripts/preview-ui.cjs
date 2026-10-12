@@ -9,6 +9,12 @@ const root = path.resolve(__dirname, "../web");
 const port = Number(process.env.DINGDIAN_PREVIEW_PORT || 18766);
 let session = null,
   appearance = "dark";
+let updateState = "idle", updateStarted = 0;
+function updateStatus() {
+  const downloaded = updateState === "downloading" ? Math.min(2000000, Math.floor((Date.now() - updateStarted) / 5000 * 2000000)) : 0;
+  if (downloaded === 2000000) updateState = "ready";
+  return { state: updateState, currentVersion: "1.1.0", currentCode: 3, latestVersion: "1.2.0", hasUpdate: updateState !== "idle", size: 2000000, downloaded, canInstall: true, notes: "界面预览用的模拟版本。\n此操作不会连接 GitHub 下载或安装 APK。" };
+}
 const devices = [
   { serial: "preview-device", model: "Redmi K80 · 界面预览", state: "device" },
 ];
@@ -52,6 +58,12 @@ function dispatch(endpoint, data = {}) {
       return { ok: true };
     case "settings/mock":
       return { ok: true };
+    case "updates/status": return updateStatus();
+    case "updates/check": updateState = "available"; return updateStatus();
+    case "updates/download": updateState = "downloading"; updateStarted = Date.now(); return updateStatus();
+    case "updates/install":
+      if (session) throw new Error("请先恢复真实定位，再安装更新。");
+      throw new Error("这是界面预览。真实手机会打开系统安装确认页面。");
     case "preview/state":
       return { session, appearance };
     default:

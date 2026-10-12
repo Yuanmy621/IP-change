@@ -17,6 +17,7 @@
     <script defer src="/native-bridge.js"></script>
     <script defer src="/vendor/components.js"></script>
     <script defer src="/app.js"></script>
+    <script defer src="/updates.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#searchQuery">跳转到位置搜索</a>
@@ -395,6 +396,26 @@
         <p id="settingsRuntime">
           网页仅控制这台 Mac 上的定位服务。应用位置后，保持电脑运行与 USB 连接。
         </p>
+      </section>
+      <section class="settings-section" id="updateSection" hidden>
+        <div class="section-row">
+          <h3><i data-lucide="refresh-cw"></i>应用更新</h3>
+          <span class="subtle" id="updateCurrent">读取版本中</span>
+        </div>
+        <p id="updateMessage" role="status" aria-live="polite">从 GitHub Release 获取最新版本。</p>
+        <p id="updatePreview" hidden>界面预览：以下版本与下载进度为模拟，不会安装软件。</p>
+        <progress id="updateProgress" max="100" value="0" aria-label="更新包下载进度" hidden></progress>
+        <details id="updateDetails" hidden>
+          <summary>新版本说明</summary>
+          <p id="updateNotes"></p>
+        </details>
+        <div class="update-actions">
+          <button class="secondary" id="updateCheck" type="button">检查更新</button>
+          <button class="primary" id="updateDownload" type="button" hidden>下载更新</button>
+          <button class="primary" id="updateInstall" type="button" hidden>安装更新</button>
+          <a class="text-button" href="https://github.com/Yuanmy621/IP-change/releases/latest" target="_blank" rel="noopener noreferrer">查看 Release</a>
+        </div>
+        <p class="subtle">安装前请先恢复真实定位。首次安装更新时，需允许定点安装应用，并在系统页面确认。</p>
       </section>
       <div class="settings-actions">
         <button class="secondary" type="button" data-open="helpDialog">

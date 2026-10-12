@@ -33,6 +33,7 @@ public final class MainActivity extends Activity {
     private WebView web;
     private FrameLayout container;
     private LocationController controller;
+    private AppUpdater updater;
     private final PlaceSearch search = new PlaceSearch();
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private volatile boolean visible, destroyed;
@@ -40,6 +41,7 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         controller = ((DingDianApp) getApplication()).controller();
+        updater = ((DingDianApp) getApplication()).updater();
         web = new WebView(this); web.setBackgroundColor(Color.rgb(20, 20, 22));
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true);
@@ -125,6 +127,17 @@ public final class MainActivity extends Activity {
                     }
                 }); return ok;
             case "status": return controller.status();
+            case "updates/status": return updater.status();
+            case "updates/check": updater.check(); return updater.status();
+            case "updates/download":
+                if (!visible) throw new IllegalStateException("请在定点页面中点击下载更新。");
+                updater.download(); return updater.status();
+            case "updates/install":
+                ui(() -> {
+                    if (!visible) throw new IllegalStateException("请返回定点页面安装更新。");
+                    if (controller.pending()) throw new IllegalStateException("请先恢复真实定位，再安装更新。");
+                    updater.install(this);
+                }); return updater.status();
             case "probe": return new JSONObject().put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("hyperos", "手机独立版").put("interface", controller.setup());
             case "settings/mock":
                 ui(() -> { requestSetupPermissions(); startActivity(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)); }); return ok;
