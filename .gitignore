@@ -15,3 +15,6 @@ android/local.properties
 ios/Vendor/idevice/libidevice_ffi.a
 ios/Signing.xcconfig
 ios/build/
+playwright-report/
+test-results/
+dist-go-coverage.out

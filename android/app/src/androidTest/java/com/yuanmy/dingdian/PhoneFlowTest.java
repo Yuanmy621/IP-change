@@ -59,8 +59,10 @@ public final class PhoneFlowTest extends InstrumentationTestCase {
         assertNotNull("Public launch link did not open the control page", activity);
         web = findWeb(activity.findViewById(android.R.id.content)); assertNotNull(web);
         try {
-            awaitJavaScript("window.NativeLocation && document.getElementById('apply') && !document.getElementById('apply').disabled");
-            evaluate("document.getElementById('latitude').value='31.2304';document.getElementById('longitude').value='121.4737';document.getElementById('network').checked=true;document.getElementById('locationForm').requestSubmit();true");
+            awaitJavaScript("window.NativeLocation && document.getElementById('apply') && document.getElementById('latitude')");
+            evaluate("document.getElementById('latitude').value='31.2304';document.getElementById('longitude').value='121.4737';document.getElementById('latitude').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('longitude').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('network').checked=true;true");
+            awaitJavaScript("!document.getElementById('apply').disabled");
+            evaluate("document.getElementById('locationForm').requestSubmit();true");
             long deadline = SystemClock.elapsedRealtime() + 10000;
             while (!controller.active() && SystemClock.elapsedRealtime() < deadline) SystemClock.sleep(100);
             JSONObject state = controller.status(); assertTrue(state.toString(), state.getBoolean("active"));

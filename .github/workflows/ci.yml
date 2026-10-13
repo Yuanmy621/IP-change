@@ -1,0 +1,192 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  go-web:
+    name: Go 与前端
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:ui
+      - name: 检查 UI 构建产物已同步
+        run: git diff --exit-code -- web/vendor
+      - run: go vet ./...
+      - run: go test -race -coverprofile=dist-go-coverage.out ./...
+      - name: 构建两种 Mac 架构
+        run: |
+          mkdir -p dist/ci-macos
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -o dist/ci-macos/dingdian-arm64 .
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -trimpath -o dist/ci-macos/dingdian-amd64 .
+      - run: python3 -m unittest discover -s scripts/ci -p '*_test.py' -v
+      - name: 校验 CI/CD 工作流语法
+        env:
+          GOTOOLCHAIN: auto
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck= -pyflakes= .github/workflows/ci.yml .github/workflows/release.yml
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: macos-validation
+          path: dist/ci-macos/
+          retention-days: 7
+
+  browser:
+    name: 浏览器功能回归
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: browser-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  android:
+    name: Android 构建与测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: JVM 回归、Lint 与主 APK / 测试 APK 构建
+        working-directory: android
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: 校验 APK 内的网页资源与源码一致
+        run: python3 scripts/ci/artifacts.py --apk android/app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: android-validation
+          path: android/app/build/outputs/apk/
+          retention-days: 7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: android-test-reports
+          path: android/app/build/reports/
+          retention-days: 7
+
+  android-device:
+    name: Android 模拟器 API ${{ matrix.api }}
+    needs: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [28, 36]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: android-validation
+          path: dist/android-validation
+      - name: 启用 Linux KVM
+        run: |
+          sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: python3 scripts/ci/android-device.py dist/android-validation
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: android-device-${{ matrix.api }}
+          path: dist/android-device/
+          retention-days: 7
+
+  ios:
+    name: iOS 构建与逻辑校验
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Swift 坐标、链接和恢复记录回归
+        run: |
+          mkdir -p dist/ios-tests
+          xcrun swiftc ios/DingDian/LocationModels.swift ios/DingDian/RecoveryJournal.swift ios/Tests/LocationModelsTests.swift -o dist/ios-tests/location-models
+          dist/ios-tests/location-models
+      - run: ./build-ios.sh
+      - name: 校验项目生成结果、版本与未签名 IPA
+        run: |
+          git diff --exit-code -- ios/DingDian.xcodeproj/project.pbxproj
+          python3 scripts/ci/artifacts.py --ipa dist/定点-iOS-实验版-未签名.ipa
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ios-experimental-validation
+          path: dist/定点-iOS-实验版-未签名.ipa
+          retention-days: 7
+
+  integrity:
+    name: 功能完整性校验
+    if: always()
+    needs: [go-web, browser, android, android-device, ios]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 所有校验必须成功，失败、取消和跳过均不可合并
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          results = json.loads(os.environ['RESULTS'])
+          for name, job in results.items():
+              print(name, job['result'])
+          sys.exit(0 if results and all(job['result'] == 'success' for job in results.values()) else 1)
+          PY

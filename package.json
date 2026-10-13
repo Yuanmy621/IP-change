@@ -4,10 +4,12 @@
   "scripts": {
     "build:ui": "node scripts/build-ui.mjs",
     "test": "node --test web_test.cjs scripts/preview-search.test.cjs",
-    "preview": "node scripts/preview-ui.cjs"
+    "preview": "node scripts/preview-ui.cjs",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@awesome.me/webawesome": "3.14.0",
+    "@playwright/test": "1.64.0",
     "esbuild": "0.25.12",
     "lucide": "1.55.0"
   }
