@@ -2,6 +2,8 @@
 
 在地图中选择位置，支持 **手机独立版** 和 **Mac + USB 版**。适合个人开发、地图功能调试和位置相关场景测试。
 
+源码合并需通过 [CI/CD 功能完整性校验](docs/CI_CD.md)，包含前端流程、Go、Android 模拟器与 iOS 构建。新版本可从 GitHub Actions 的 Release 流程发布；首次需配置原 Android 签名密钥。
+
 v1.2.0 将 Android 配置流程推广到标准 Android 9+ 手机，并新增独立 **iOS 实验版**。Android 使用统一 APK，无需按 Redmi、三星或其他品牌分别打包；只有 Redmi K80 完成过本项目实机验证。
 
 | 平台 | 实现与验证状态 |

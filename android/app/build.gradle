@@ -11,6 +11,23 @@ android {
         testInstrumentationRunner 'android.test.InstrumentationTestRunner'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    // CI validation keeps the normal disposable debug key. Publishing must use
+    // the original key, whose public certificate is checked by prepare-release.py.
+    def releaseKeystore = System.getenv('DINGDIAN_KEYSTORE_PATH')
+    if (releaseKeystore) {
+        def signingVariables = ['DINGDIAN_KEYSTORE_PASSWORD', 'DINGDIAN_KEY_ALIAS', 'DINGDIAN_KEY_PASSWORD']
+        if (signingVariables.any { !System.getenv(it) }) {
+            throw new GradleException('发布签名配置不完整，禁止生成临时签名安装包')
+        }
+        signingConfigs {
+            debug {
+                storeFile file(releaseKeystore)
+                storePassword System.getenv('DINGDIAN_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('DINGDIAN_KEY_ALIAS')
+                keyPassword System.getenv('DINGDIAN_KEY_PASSWORD')
+            }
+        }
+    }
     sourceSets.main.assets.srcDirs = ['../../web']
     useLibrary 'android.test.runner'
     useLibrary 'android.test.base'
