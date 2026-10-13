@@ -47,6 +47,8 @@ jobs:
           CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -trimpath -o dist/ci-macos/dingdian-amd64 .
       - run: python3 -m unittest discover -s scripts/ci -p '*_test.py' -v
       - name: 校验 CI/CD 工作流语法
+        env:
+          GOTOOLCHAIN: auto
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck= -pyflakes= .github/workflows/ci.yml .github/workflows/release.yml
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
