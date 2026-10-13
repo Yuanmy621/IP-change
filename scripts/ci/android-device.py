@@ -29,8 +29,12 @@ def main():
         run(*adb, 'shell', 'pm', 'grant', package, 'android.permission.POST_NOTIFICATIONS')
     run(*adb, 'shell', 'settings', 'put', 'secure', 'location_mode', '3')
     run(*adb, 'shell', 'appops', 'set', package, 'android:mock_location', 'allow')
+    # API 28's stock WebView predates the UI bundle's Chrome 111 target. Validate
+    # the legacy native provider/service branch there; the modern image exercises
+    # the public link and actual WebView control flow. Neither is a skipped test.
+    flow = 'NativeFlowTest' if sdk < 33 else 'PhoneFlowTest'
     output = run(*adb, 'shell', 'am', 'instrument', '-w', '-e', 'exerciseMock', 'true', '-e', 'class',
-                 package + '.ControllerTest,' + package + '.PhoneFlowTest', package + '.test/android.test.InstrumentationTestRunner')
+                 package + '.ControllerTest,' + package + '.' + flow, package + '.test/android.test.InstrumentationTestRunner')
     folder = Path('dist/android-device')
     folder.mkdir(parents=True, exist_ok=True)
     (folder / 'instrumentation.txt').write_text(output)

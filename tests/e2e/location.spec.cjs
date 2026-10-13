@@ -71,7 +71,8 @@ test('地图源切换和主题切换保留目标，收藏覆盖重载', async ({
   await expect(page.locator('#latitude')).toHaveValue('30.572800');
   await page.locator('#mapProvider').selectOption('amap');
   await expect(page.locator('#longitude')).toHaveValue('104.066800');
-  await page.locator('input[name="theme"][value="light"]').check();
+  await page.locator('.theme-options label').filter({ has: page.locator('input[value="light"]') }).click();
+  await expect(page.locator('input[name="theme"][value="light"]')).toBeChecked();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.reload();
   await expect(page.locator('#favoritesCount')).toHaveText('1');
